@@ -1,4 +1,4 @@
-### [Software_Audio](Software_Audio/README.md)
+### [Software_Audio](Computer_Audio/README.md)
 
 ### [Computer_Graphic](Computer_Graphic/README.md)
 
