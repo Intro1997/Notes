@@ -1,0 +1,58 @@
+# 公式
+
+## 前置知识
+
+设存在四元数 p： $$\begin{align}p&=a+bi+cj+dk\\&=\begin{bmatrix}a\\b\\c\\d\end{bmatrix}\\&=[s,\textbf{v}],\quad(\textbf{v}=\begin{bmatrix}x\\y\\z\end{bmatrix},s,x,y,z\in \mathbb{R})\end{align}$$
+作为下述前置知识的说明
+
+### 1. 四元数的共轭
+
+四元数 p 的共轭:
+$$p^{*}=a-bi-cj-dk$$
+
+### 2. 四元数的乘法表示
+
+设存在四元数 q： $$\begin{align}q&=e+fi+gj+hk\\&=\begin{bmatrix}e\\f\\g\\h\end{bmatrix}\\&=[t,\textbf{u}],\quad(\textbf{u}=\begin{bmatrix}x\\y\\z\end{bmatrix},t,x,y,z\in \mathbb{R})\end{align}$$
+则有两个四元数：$p = [s, \textbf{v}]$，$q = [t, \textbf{u}]$，p 左乘 q 表示为
+
+$$
+qp = [st-\textbf{v}\cdot\textbf{u},\,s\textbf{u}+t\textbf{v}+\textbf{v}\times\textbf{u}]
+$$
+
+## 最终公式
+
+有向量 $(v_x, v_y, v_z)$，构造四元数 $v=0+v_xi+v_yj+v_zk$
+
+有旋转轴 $\vec{u}=(u_x, u_y, u_z)$，$\theta$ 表示围绕 $\vec{u}$ 旋转的角度，构造四元数 p：
+$$\begin{align} 
+p &= [\cos(\frac{\theta}{2}),\sin({\frac{\theta}{2}})\vec{u}]\\ 
+&= \cos(\frac{\theta}{2})+\sin({\frac{\theta}{2}})u_{x}i+\sin({\frac{\theta}{2}})u_{y}j + \sin({\frac{\theta}{2}})u_{z}k
+\end{align}$$
+
+p 表示旋转的角度，则旋转后的四元数 $v'=0+v'_xi+v'_yj+v'_zk$，定义为：
+$$v'=pvp^{*}$$
+则 $(v'_x,v'_y,v'_z)$ 为向量 $(v_x, v_y, v_z)$ 使用四元数 p 旋转后的结果。
+
+# 推导
+
+参考 https://krasjet.github.io/quaternion/quaternion.pdf
+
+# 示例
+
+[demo.html](./demo.html)
+
+注释 `// test for quaternion rotation` 下方为四元数计算的例子
+
+```js
+// test for quaternion rotation
+const rotate_axis = [0, 0, 1];
+const angle = Math.PI / 2;
+const rotate_vertices = [];
+
+for (var i = 0; i < vertices.length / 3; i++) {
+  let v = [vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]];
+  const ret_vec = quaternion_rotate(v, rotate_axis, angle);
+  rotate_vertices.push(...ret_vec);
+}
+vertices.push(...rotate_vertices);
+```

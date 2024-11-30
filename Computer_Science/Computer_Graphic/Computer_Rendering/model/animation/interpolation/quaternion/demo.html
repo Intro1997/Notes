@@ -1,0 +1,305 @@
+<!-- reference https://www.tutorialspoint.com/webgl/webgl_drawing_a_triangle.htm -->
+<!DOCTYPE html>
+<html>
+  <body>
+    <canvas width="570" height="570" id="my_Canvas"></canvas>
+
+    <script>
+      function vec3_add(v_array) {
+        var ret = [0, 0, 0];
+        for (var i = 0; i < v_array.length; i++) {
+          ret[0] += v_array[i][0];
+          ret[1] += v_array[i][1];
+          ret[2] += v_array[i][2];
+          ret[3] += v_array[i][3];
+        }
+        return ret;
+      }
+      function vec3_mult(a, v) {
+        return [a * v[0], a * v[1], a * v[2]];
+      }
+      function vec3_dot(a, b) {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      }
+      function vec3_cross(a, b) {
+        return [
+          a[1] * b[2] - a[2] * b[1],
+          a[2] * b[0] - a[0] * b[2],
+          a[0] * b[1] - a[1] * b[0],
+        ];
+      }
+      function quaternion_conjugate(q) {
+        return [q[0], -q[1], -q[2], -q[3]];
+      }
+
+      function quaternion_multiple(a, b) {
+        a_real = a[0];
+        a_imaginary = [a[1], a[2], a[3]];
+        b_real = b[0];
+        b_imaginary = [b[1], b[2], b[3]];
+
+        ret_real = a_real * b_real - vec3_dot(a_imaginary, b_imaginary);
+        ret_imaginary = vec3_add([
+          vec3_mult(a_real, b_imaginary),
+          vec3_mult(b_real, a_imaginary),
+          vec3_cross(a_imaginary, b_imaginary),
+        ]);
+
+        return [ret_real, ...ret_imaginary];
+      }
+
+      function get_quat_left_multiple_quat(quat) {
+        const [a, b, c, d] = quat;
+        // prettier-ignore
+        return new Float32Array([
+          a, -b, -c, -d,
+          b,  a, -d,  c,
+          c,  d,  a, -b,
+          d, -c,  b,  a
+        ]);
+      }
+
+      function get_quat_right_multiple_quat(quat) {
+        const [a, b, c, d] = quat;
+        // prettier-ignore
+        return new Float32Array([
+          a, -b, -c, -d,
+          b,  a,  d, -c,
+          c, -d,  a, b,
+          d,  c, -b,  a
+        ]);
+      }
+
+      function mat4_multiple_mat4(a, b) {
+        
+
+      }
+
+      function get_quat_multiple_quat(quat) {
+        const left = get_quat_left_multiple_quat(quat);
+        const right = get_quat_right_multiple_quat(quat);
+        return mat4_multiple_mat4(left, right);
+      }
+
+      // mat left multiple vec4
+      // prettier-ignore
+      function mat_multiple_vec4(mat, vec4) {        
+        const [m00, m01, m02, m03] = [mat[0], mat[1], mat[2], mat[3]];
+        const [m10, m11, m12, m13] = [mat[4+0], mat[4+1], mat[4+2], mat[4+3]];
+        const [m20, m21, m22, m23] = [mat[4*2+0], mat[4*2+1], mat[4*2+2], mat[4*2+3]];
+        const [m30, m31, m32, m33] = [mat[4*3+0], mat[4*3+1], mat[4*3+2], mat[4*3+3]];
+
+        const [a, b, c, d] = vec4;
+
+        return [
+        m00*a + m01*b + m02*c + m03*d,
+        m10*a + m11*b + m12*c + m13*d,
+        m20*a + m21*b + m22*c + m23*d,
+        m30*a + m31*b + m32*c + m33*d,
+        ]
+      }
+
+      // degree is pi/x
+      function quaternion_rotate(v, rotate_axis, degree, method = "quat") {
+        half_degree = degree / 2;
+        rotate_quaternion = [
+          Math.cos(half_degree),
+          Math.sin(half_degree) * rotate_axis[0],
+          Math.sin(half_degree) * rotate_axis[1],
+          Math.sin(half_degree) * rotate_axis[2],
+        ];
+
+        let quanternion_v = [0, v[0], v[1], v[2]];
+        let ret_quanternion_v = [1, 0, 0, 0];
+
+        if (method === "quat") {
+          ret_quanternion_v = quaternion_multiple(
+            rotate_quaternion,
+            quanternion_v
+          );
+          ret_quanternion_v = quaternion_multiple(
+            ret_quanternion_v,
+            quaternion_conjugate(rotate_quaternion)
+          );
+        } else {
+          const left_mat = get_quat_left_multiple_quat(rotate_quaternion);
+          const right_mat = get_quat_right_multiple_quat(
+            quaternion_conjugate(rotate_quaternion)
+          );
+          ret_quanternion_v = mat_multiple_vec4(left_mat, quanternion_v);
+          console.log("ret_quanternion_v = ", ret_quanternion_v);
+          ret_quanternion_v = mat_multiple_vec4(right_mat, ret_quanternion_v);
+          console.log("ret_quanternion_v = ", ret_quanternion_v);
+        }
+        return [
+          ret_quanternion_v[1],
+          ret_quanternion_v[2],
+          ret_quanternion_v[3],
+        ];
+      }
+      /*============== Creating a canvas ====================*/
+      var canvas = document.getElementById("my_Canvas");
+      gl = canvas.getContext("experimental-webgl");
+
+      /*======== Defining and storing the geometry ===========*/
+
+      var vertices = [],
+        indices = [];
+      // prettier-ignore
+      {
+        vertices = [
+             0.0,  0.01, 0.0,
+             0.5,  0.01, 0.0,
+             0.0, -0.01, 0.0,
+             0.5, -0.01, 0.0
+        ]
+        indices = [
+            0, 1, 2,
+            2, 1, 3,
+            0+4, 1+4, 2+4,
+            2+4, 1+4, 3+4
+        ];
+      }
+
+      // test for quaternion rotation
+      const rotate_axis = [0, 0, 1];
+      const angle = Math.PI * 1.5;
+      const rotate_vertices = [];
+
+      for (var i = 0; i < vertices.length / 3; i++) {
+        let v = [vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]];
+        const ret_vec = quaternion_rotate(v, rotate_axis, angle, "mat");
+        rotate_vertices.push(...ret_vec);
+      }
+      console.log("rotate_vertices = ", rotate_vertices);
+      vertices.push(...rotate_vertices);
+
+      // const test_vec = [0.5, 0.01, 0.0];
+      // const ret_vec = quaternion_rotate(test_vec, rotate_axis, angle);
+      // console.log("ret_vec = ", ret_vec);
+
+      // Create an empty buffer object to store vertex buffer
+      var vertex_buffer = gl.createBuffer();
+
+      // Bind appropriate array buffer to it
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+
+      // Pass the vertex data to the buffer
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(vertices),
+        gl.STATIC_DRAW
+      );
+
+      // Unbind the buffer
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+      // Create an empty buffer object to store Index buffer
+      var Index_Buffer = gl.createBuffer();
+
+      // Bind appropriate array buffer to it
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, Index_Buffer);
+
+      // Pass the vertex data to the buffer
+      gl.bufferData(
+        gl.ELEMENT_ARRAY_BUFFER,
+        new Uint16Array(indices),
+        gl.STATIC_DRAW
+      );
+
+      // Unbind the buffer
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+      /*================ Shaders ====================*/
+
+      // Vertex shader source code
+      var vertCode =
+        "attribute vec3 coordinates;" +
+        "varying vec3 Color;" +
+        "void main(void) {" +
+        " Color = coordinates;" +
+        " gl_Position = vec4(coordinates, 1.0);" +
+        "}";
+
+      // Create a vertex shader object
+      var vertShader = gl.createShader(gl.VERTEX_SHADER);
+
+      // Attach vertex shader source code
+      gl.shaderSource(vertShader, vertCode);
+
+      // Compile the vertex shader
+      gl.compileShader(vertShader);
+
+      //fragment shader source code
+      var fragCode =
+        "precision mediump float;" +
+        "varying vec3 Color;" +
+        "void main(void) {" +
+        " vec3 c = vec3(0.0, 0.0, 0.0);" +
+        "if (Color.x > 0.0) {c.x = 1.0;}" +
+        "if (Color.y > 0.0) {c.y = 1.0;}" +
+        "if (Color.z > 0.0) {c.z = 1.0;}" +
+        " gl_FragColor = vec4(c, 1.0);" +
+        "}";
+
+      // Create fragment shader object
+      var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+      // Attach fragment shader source code
+      gl.shaderSource(fragShader, fragCode);
+
+      // Compile the fragmentt shader
+      gl.compileShader(fragShader);
+
+      // Create a shader program object to store
+      // the combined shader program
+      var shaderProgram = gl.createProgram();
+
+      // Attach a vertex shader
+      gl.attachShader(shaderProgram, vertShader);
+
+      // Attach a fragment shader
+      gl.attachShader(shaderProgram, fragShader);
+
+      // Link both the programs
+      gl.linkProgram(shaderProgram);
+
+      // Use the combined shader program object
+      gl.useProgram(shaderProgram);
+
+      /*======= Associating shaders to buffer objects =======*/
+
+      // Bind vertex buffer object
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+
+      // Bind index buffer object
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, Index_Buffer);
+
+      // Get the attribute location
+      var coord = gl.getAttribLocation(shaderProgram, "coordinates");
+
+      // Point an attribute to the currently bound VBO
+      gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
+
+      // Enable the attribute
+      gl.enableVertexAttribArray(coord);
+
+      /*=========Drawing the triangle===========*/
+
+      // Clear the canvas
+      gl.clearColor(0.3, 0.3, 0.3, 1.0);
+
+      // Enable the depth test
+      gl.enable(gl.DEPTH_TEST);
+
+      // Clear the color buffer bit
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      // Set the view port
+      gl.viewport(0, 0, canvas.width, canvas.height);
+
+      // Draw the triangle
+      gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    </script>
+  </body>
+</html>

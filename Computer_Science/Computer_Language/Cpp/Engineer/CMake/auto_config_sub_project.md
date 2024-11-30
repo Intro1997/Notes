@@ -1,0 +1,193 @@
+# 背景
+
+ICViewer 项目使用了 glfw，glm，assimp 库，最好的办法是能够在编译中一直使用这些库的最新版本，因此最好的方式是能够在 build 的时候 clone 最新的版本，在本地对依赖库进行更新，以适应不同操作系统。这样无论是维护还是上手，都非常方便。
+
+# 如何在生成项目的时候进行下载呢？
+
+cmake 的 [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) 模块提供了生成构建系统时，进行指定项目的 clone 能力。我们需要用到以下几个 API：
+
+1. [FetchContent_Declare](https://cmake.org/cmake/help/latest/module/FetchContent.html#command:fetchcontent_declare)：此 API 使用 `<contentOptions>`（详细见文档）描述的方式，指定下载/填充（populate）<sup><a href="#r1">[1]</a></sup> `<name>` 的方式，既可以通过指定 git 链接的方式下载，也可以通过指定压缩包的方式下载。多次对同一个 `<name>` 进行调用（包括子项目）时，只有第一个有效。该 API 不进行下载！
+
+2. [FetchContent_MakeAvailable](https://cmake.org/cmake/help/latest/module/FetchContent.html#command:fetchcontent_makeavailable)：FetchContent_Declare 指定下载方式后，通过调用该 API 来进行下载。如果下载失败，对应的错误信息也会反映到控制台中，例如：
+
+```bash
+-- Downloading module assimp...
+[ 11%] Performing download step (git clone) for 'assimp-populate'
+Cloning into 'assimp-src'...
+ERROR: Repository not found.
+fatal: Could not read from remote repository.
+...
+```
+
+通过该 API 获取项目成功后，会将项目的 POPULATED，SOURCE_DIR，BINARY_DIR 等信息添加到全局属性中，之后就可以使用 FetchContent_GetProperties 进行查询。
+
+3. [FetchContent_GetProperties](https://cmake.org/cmake/help/latest/module/FetchContent.html#command:fetchcontent_getproperties)：当 FetchContent_MakeAvailable 调用成功后，我们就可以通过此 API 来查询下载好的依赖库，其源代码位置以及构建位置，主要用到的参数有以下几个：
+   - `<lowercaseName>_POPULATED`：查询项目是否填充完成
+   - `<lowercaseName>_SOURCE_DIR`：查询项目填充位置
+   - `<lowercaseName>_POPULATED`：查询项目构建后的位置
+
+# Try it with demo
+
+1. 定义一个 CMakeLists.txt：
+
+```CMakeLists
+cmake_minimum_required(VERSION 3.23.2)
+
+set(CMAKE_CXX_STANDARD 17)
+
+project(DownloadSubProject)
+
+add_executable(FetchContent main.cpp)
+```
+
+2. 创建 main.cpp
+
+```cpp
+#include <iostream>
+
+int main() {
+  return 0;
+}
+```
+
+3. CMakeLists 中编写一个 load_module 函数：
+
+```cmakelists
+include(FetchContent)
+
+function(load_module name uri)
+  FetchContent_GetProperties(${name})
+
+  if(NOT ${${name}_POPULATED})
+    FetchContent_Declare(
+      ${name}
+      GIT_REPOSITORY ${uri}
+    )
+    message(STATUS "Cannot find module ${name}, start downloading...")
+    FetchContent_MakeAvailable(${name})
+  endif()
+endfunction()
+```
+
+由于 cmake function 不支持返回值，所以我们只能在调用 load_module 之后尝试获取 properties：
+
+```cmakelists
+load_module(assimp git@github.com:assimp/assimp.git)
+FetchContent_GetProperties(assimp)
+
+if(NOT ${assimp_POPULATED})
+  message(FATAL_ERROR "Load assimp library failed")
+  return()
+else()
+  message(STATUS "Get assimp library success")
+  message(STATUS ${assimp_SOURCE_DIR})
+  message(STATUS ${assimp_BINARY_DIR})
+  list(APPEND THIRD_PARTY_HEADER_PATH ${assimp_SOURCE_DIR}/include)
+endif()
+```
+
+加载完成之后，通过 `FetchContent_GetProperties` 来获取一下 assimp 相关的变量，通过 assimp_POPULATED 变量判断是否获取成功。并且将 assimp 的 include 目录添加到 THIRD_PARTY_HEADER_PATH list 变量中
+
+4. 引用加载到的 assimp：
+
+接着，我们添加 assimp 的 include 路径和 library 到项目中，完整的 cmakelists 如下所示：
+
+```cmakelists
+cmake_minimum_required(VERSION 3.23.2)
+
+set(CMAKE_CXX_STANDARD 17)
+
+project(DownloadSubProject)
+
+include(FetchContent)
+
+function(load_module name uri)
+  FetchContent_GetProperties(${name})
+
+  if(NOT ${${name}_POPULATED})
+    FetchContent_Declare(
+      ${name}
+      GIT_REPOSITORY ${uri}
+    )
+    message(STATUS "Cannot find module ${name}, start downloading...")
+    FetchContent_MakeAvailable(${name})
+  endif()
+endfunction()
+
+load_module(assimp git@github.com:assimp/assimp.git)
+FetchContent_GetProperties(assimp)
+
+if(NOT ${assimp_POPULATED})
+  message(FATAL_ERROR "Load assimp library failed")
+  return()
+else()
+  message(STATUS "Get assimp library success")
+  message(STATUS ${assimp_SOURCE_DIR}/include/assimp)
+  list(APPEND THIRD_PARTY_HEADER_PATH ${assimp_SOURCE_DIR}/include)
+endif()
+
+message(STATUS "You should not see this when load module failed!")
+
+add_executable(DownloadSubProject main.cpp)
+
+target_include_directories(DownloadSubProject SYSTEM PUBLIC
+  ${THIRD_PARTY_HEADER_PATH}
+)
+
+target_link_libraries(DownloadSubProject
+  assimp
+)
+```
+
+5. 尝试在 main.cpp 中调用 assimp API：
+
+```cpp
+#include <assimp/Importer.hpp>  // C++ importer interface
+#include <assimp/postprocess.h> // Post processing flags
+#include <assimp/scene.h>       // Output data structure
+#include <cstdio>
+#include <iostream>
+
+int main() {
+  Assimp::Importer importer;
+  std::string extension_list;
+  importer.GetExtensionList(extension_list);
+  std::cout << extension_list << "\n";
+  return 0;
+}
+```
+
+6. build and run！
+
+```shell
+mkdir build
+cd build
+cmake ..
+cmake --build .
+./DownloadSubProject
+```
+
+如果成功的话，可以看到如下输出：
+
+```shell
+*.3d;*.3ds;*.3mf;*.ac;*.ac3d;*.acc;*.amf;*.ase;*.ask;*.assbin;*.b3d;*.blend;*.bsp;*.bvh;*.cob;*.csm;*.dae;*.dxf;*.enff;*.fbx;*.glb;*.gltf;*.hmp;*.ifc;*.ifczip;*.iqm;*.irr;*.irrmesh;*.lwo;*.lws;*.lxo;*.md2;*.md3;*.md5anim;*.md5camera;*.md5mesh;*.mdc;*.mdl;*.mesh;*.mesh.xml;*.mot;*.ms3d;*.ndo;*.nff;*.obj;*.off;*.ogex;*.pk3;*.ply;*.pmx;*.prj;*.q3o;*.q3s;*.raw;*.scn;*.sib;*.smd;*.step;*.stl;*.stp;*.ter;*.uc;*.vta;*.x;*.x3d;*.x3db;*.xgl;*.xml;*.zae;*.zgl
+```
+
+# 显示下载进度
+
+上述例子没办法看到 git clone 的进度，可以用以下方法来显示进度：
+
+```cmakelists
+Set(FETCHCONTENT_QUIET FALSE)
+
+FetchContent_Declare(
+  someTarget
+  GIT_REPOSITORY "https://github.com/someone/someTarget.git"
+  GIT_TAG "tag"
+  GIT_PROGRESS TRUE
+)
+```
+
+# Reference
+
+1. <a id="r1" href="https://stackoverflow.com/questions/62809943/what-does-populate-actually-do-in-cmake-documents">What does "populate" actually do in CMake documents?</a>

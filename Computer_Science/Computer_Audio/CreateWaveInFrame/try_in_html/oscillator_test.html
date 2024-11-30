@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./oscillator_test.css" />
+    <title>Compare My Oscillator with Chrome</title>
+    <script>
+      function resizeIframe(iframe) {
+        iframe.style.height =
+          iframe.contentWindow.document.documentElement.scrollHeight + 1 + "px";
+        iframe.style.width =
+          iframe.contentWindow.document.documentElement.scrollWidth + 1 + "px";
+        // console.clear();
+      }
+    </script>
+  </head>
+
+  <body>
+    <h1>
+      对比插值生成的 oscillator 数据和 sinx 计算生成的 oscillator 数据之间的差异
+    </h1>
+    <p>
+      每个 Oscillator 测试项目都有五个按钮:<br />
+      1. 播放 1s 插值生成数据<br />
+      2. 播放 1s chrome oscillator<br />
+      3. 输出 chrome oscillator 1s 播放的数据（存在重复段，需要手动去除）<br />
+      4. 对比插值生成数据和 chrome oscillator
+      数据（已废除，详情见按钮交互后的说明）<br />
+      5. 对比插值生成数据与 sinx 生成数据之间的差异，频率范围取 [-sampleRate/2,
+      sampleRate/2]<br />
+    </p>
+    <h2>名词解释</h2>
+    <p>
+      1. 插值生成数据（generated）: 是指通过对 sinx 一周期内，进行采样率为 4096
+      的数据采样，得到用于插值的基本数据，之后根据需求中正弦波频率的不同，通过插值求出正弦波数据。<br />
+      2. sinx 计算（nature）: 根据公式 frequency * 2 * pi / sampleRate 求出时间
+      step 的方式求出离散的正弦波数据点
+    </p>
+
+    <iframe
+      src="./wave_types/sine.html"
+      frameborder="0"
+      onload="resizeIframe(this)"
+    ></iframe>
+    <br />
+
+    <iframe
+      src="./wave_types/saw.html"
+      frameborder="0"
+      onload="resizeIframe(this)"
+    ></iframe>
+    <br />
+
+    <iframe
+      src="./wave_types/square.html"
+      frameborder="0"
+      onload="resizeIframe(this)"
+    ></iframe>
+    <br />
+
+    <iframe
+      src="./wave_types/triangle.html"
+      frameborder="0"
+      onload="resizeIframe(this)"
+    ></iframe>
+
+    <script src="https://unpkg.com/@free-side/audioworklet-polyfill/dist/audioworklet-polyfill.js"></script>
+    <script src="./help_func.js"></script>
+  </body>
+</html>

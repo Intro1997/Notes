@@ -1,0 +1,19 @@
+# 傅立叶级数的来源
+
+> 参考 [【[双语字幕] [2006 SP] MIT 18.03 Differential Equations 微分方程 P15】 ](https://www.bilibili.com/video/BV1tx411S77o/?p=15&share_source=copy_web&vd_source=7122811f33b9804864bfad38c3aaa539)
+
+对于一个周期函数，我们可以将它看作多个频率不断增加的 sin 和 cos 函数的组合拟合而成的。
+
+$$
+\begin{align}
+f(x)&=c_0 + \sum^{\infty}_{x=1}a_ncos(nx) + \sum^{\infty}_{x=1}b_nsin(nx)
+\end{align}
+$$
+
+公式（1）由以下三个部分组成：
+
+- $c_0$：偏移量。
+- $\sum^{\infty}_{x=1}a_ncos(nx)$：n 个余弦波。
+- $\sum^{\infty}_{x=1}b_nsin(nx)$：n 个正弦波。
+
+后两部分可以通过多个正弦和余弦的拟合来理解；而 $c_0$ 的出现，弥补了正弦和余弦函数无法处理在 $y$ 轴存在偏移量的函数，例如使用傅立叶级数拟合 $y=1+sinx$。

@@ -1,0 +1,121 @@
+# glfw 禁用鼠标问题
+
+## 背景
+
+当时想做一一个场景内移动时，隐藏鼠标的功能。GLFW_CURSOR_HIDDEN 在窗口内有效，但鼠标移动到窗口外时，就不被隐藏了，这样鼠标滑动到屏幕边缘时，就无法继续移动了。所以只能使用 GLFW_CURSOR_DISABLED。
+
+## 问题
+
+设计的使用场景是这样的：
+
+1. 无任何键盘按键时，鼠标正常显示和移动
+2. 聚焦到窗口时，按下 cmd/alt 键，鼠标隐藏，并且鼠标移动时，改变摄像机观看的方向（此时设置鼠标状态为 GLFW_CURSOR_DISABLED）
+3. 松开 cmd/alt 键时，回到 1 描述的状态（此时设置鼠标状态为 GLFW_CURSOR_NORMAL）
+
+但我测试时发现，如果在移动过程中按下 cmd/alt，切换鼠标状态到 GLFW_CURSOR_DISABLED，摄像机有 1 帧画面的视角进行了大幅度的位移，但随后又移动回到当前位置：
+
+<video id="video" controls="" preload="none" poster="封面">
+  <source id="mp4" src="./bug0.mp4" type="video/mp4">
+</video>
+
+搜了一圈发现，似乎注释掉源代码中 \_glfwPlatformSetCursorMode 内部的 centerCursor 函数<a href="#r1"><sup>[1]</sup></a>就正常了。我找了一下 macOS 下的逻辑：
+
+```objc
+void _glfwSetCursorModeCocoa(_GLFWwindow* window, int mode)
+{
+    @autoreleasepool {
+
+    if (mode == GLFW_CURSOR_CAPTURED)
+    {
+        _glfwInputError(GLFW_FEATURE_UNIMPLEMENTED,
+                        "Cocoa: Captured cursor mode not yet implemented");
+    }
+
+    if (_glfwWindowFocusedCocoa(window))
+        updateCursorMode(window);
+
+    } // autoreleasepool
+}
+```
+
+进入里面的 updateCursorMode 函数：
+
+```objc
+static void updateCursorMode(_GLFWwindow* window)
+{
+    if (window->cursorMode == GLFW_CURSOR_DISABLED)
+    {
+        _glfw.ns.disabledCursorWindow = window;
+        _glfwGetCursorPosCocoa(window,
+                               &_glfw.ns.restoreCursorPosX,
+                               &_glfw.ns.restoreCursorPosY);
+        _glfwCenterCursorInContentArea(window);
+        CGAssociateMouseAndMouseCursorPosition(false);
+    }
+    else if (_glfw.ns.disabledCursorWindow == window)
+    {
+      // ...
+    }
+
+    if (cursorInContentArea(window))
+        updateCursorImage(window);
+}
+```
+
+进入 \_glfwCenterCursorInContentArea：
+
+```c
+// Center the cursor in the content area of the specified window
+//
+void _glfwCenterCursorInContentArea(_GLFWwindow* window)
+{
+    int width, height;
+
+    _glfw.platform.getWindowSize(window, &width, &height);
+    _glfw.platform.setCursorPos(window, width / 2.0, height / 2.0);
+}
+```
+
+发现这里确实将光标位置重制到了窗口中心。我也翻阅了一下文档，里面也有提到会 re-center<a href="#r2"><sup>[2]</sup></a>。
+
+## 解决方案
+暂时没有找到有效的解决方案，[issue](https://github.com/glfw/glfw/issues/2523) 已经提交至 glfw github。
+
+### 1. 尝试在 disable 之前，set 回去（失败）
+
+既然 disable 鼠标时会设置鼠标位置到窗口中心，那我为什么不记录一下设置之前的鼠标值，然后在 disable 之后设置回去呢？
+
+```cpp
+  int cmd_key_state = glfwGetKey(window, GLFW_KEY_LEFT_SUPER);
+  if (cmd_key_state == GLFW_PRESS) {
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPos(window, x, y);
+  }
+```
+
+结果没有什么作用，看了一下 glfwGetCursorPos 的代码，发现当鼠标状态是 GLFW_CURSOR_DISABLED 时，会将设置的位置记录到 virtualPos 上：
+
+```cpp
+GLFWAPI void glfwSetCursorPos(GLFWwindow* handle, double xpos, double ypos)
+{
+    // ...
+    if (window->cursorMode == GLFW_CURSOR_DISABLED)
+    {
+        // Only update the accumulated position if the cursor is disabled
+        window->virtualCursorPosX = xpos;
+        window->virtualCursorPosY = ypos;
+    }
+    else
+    {
+        // Update system cursor position
+        _glfw.platform.setCursorPos(window, xpos, ypos);
+    }
+}
+```
+
+# reference
+
+1. <a id="r1" href="https://github.com/glfw/glfw/issues/1523">Incorrect cursor position with GLFW_CURSOR_DISABLED</a>
+2. <a id="r2" href="https://www.glfw.org/docs/latest/group__input.html#gaa92336e173da9c8834558b54ee80563b:~:text=the%20cursor%2C%20transparently-,re%2Dcenters,-it%20and%20provides">GLFW Doc - glfwSetCursorPos </a>

@@ -1,0 +1,71 @@
+# 三次样条插值
+
+glTF 模型的动画中较为复杂的插值方式就是三次样条插值了，前置知识可以参考 [games102](http://staff.ustc.edu.cn/~lgliu/Courses/GAMES102_2020/default.html) 的[三次样条函数](http://staff.ustc.edu.cn/~lgliu/Courses/GAMES102_2020/PPT/GAMES102-4_CubicSplines.pdf)，这里不进行赘述。
+
+# 推导
+
+先给出 glTF 的 [cubic spline interpolation 公式]():
+
+$$v_t = (2t^3 - 3t^2 + 1) * v_k + t_d(t^3 - 2t^2 + t) * b_k + (-2t^3 + 3t^2) * v_{k+1} + t_d(t^3 - t^2) * a_{k+1}$$
+
+这里提到的[三次样条通式](http://staff.ustc.edu.cn/~lgliu/Courses/GAMES102_2020/documents/GAMES102-suppl-2-CubicSpline.pdf)计算量非常大，验证非常困难（有兴趣的可以尝试使用 python 的 sympy 进行代数多项式计算，本人也没有成功验证），可以考虑 [PPT](http://staff.ustc.edu.cn/~lgliu/Courses/GAMES102_2020/PPT/GAMES102-4_CubicSplines.pdf) 中提到的 Hermit 型插值多项式：
+
+$$
+\begin{cases}
+S(x_{i-1}) &= y_{i-1}\\
+S(x_i) &= y_i
+\end{cases}
+\begin{cases}
+S'(x_{i-1}) &= m_{i-1}\\
+S'(x_i) &= m_i
+\end{cases}
+\\
+\begin{align}
+S(x) &= y_{i-1}h_0(x)+y_ih_i(x)+m_{i-1}H_0(x)+m_iH_1(x)
+\end{align}
+$$
+
+设 $h_0(x),h_i(x),H_0(x),H_1(x)$ 的系数矩阵为 M，$h_0(x),h_i(x),H_0(x),H_1(x)$ 是关于变量 x 的三次多项式 $Ax^3+Bx^2+Cx+D$ 则 (1) 式变为：
+
+$$
+\begin{align}
+S(x)&=\begin{pmatrix}y_{i-1} & y_i & m_{i-1} & m_i\end{pmatrix}M\begin{bmatrix}x^3\\x^2\\x\\1\end{bmatrix}
+\end{align}
+$$
+
+hermite 插值本身是通过把任意区间值映射到 [0, 1] 来完成的<sup><a href="#r1">[1]</a></sup>，因此有四个等式：
+$$
+\begin{align}
+S(0) &= y_{i-1}\\
+S(1) &= y_{i}\\
+S'(0) &= m_{i-1}\\
+S'(1) &= m_{i}
+\end{align}
+$$
+设 $M_1,M_2,M_3,M_4$ 分别为 M 矩阵的第 1 到 4 行，由此结合 (2) 式可得：
+$$
+\begin{align}
+S(0) &= y_{i-1} = y_{i-1}M\begin{bmatrix}0\\0\\0\\1\end{bmatrix}\\
+S(1) &= y_{i} = y_{i}M\begin{bmatrix}1\\1\\1\\1\end{bmatrix}\\\\
+S'(0) &= m_{i-1} = m_{i-1}M\begin{bmatrix}0\\0\\1\\0\end{bmatrix}\\\\
+S'(1) &= m_{i} = m_{i}M\begin{bmatrix}3\\2\\1\\0\end{bmatrix}\\
+\end{align}
+$$
+故有等式：
+$$
+\begin{align}
+\begin{pmatrix}y_{i-1} & y_i & m_{i-1} & m_i\end{pmatrix}M\begin{bmatrix}0&1&0&3\\0&1&0&2\\0&1&1&1\\1&1&0&0\end{bmatrix}&=\begin{pmatrix}y_{i-1} & y_i & m_{i-1} & m_i\end{pmatrix}\\
+M&=\begin{bmatrix}0&1&0&3\\0&1&0&2\\0&1&1&1\\1&1&0&0\end{bmatrix}^{-1}\\
+M&=\begin{bmatrix}2&-3&0&1\\-2&3&0&0\\1&-2&1&0\\1&-1&0&0\end{bmatrix}
+\end{align}
+$$
+带入 (2) 中可得：
+$$
+S(x) = (2x^3-3x^2+1)y_{i-1}+(-2x^3+3x^2)y_i+(x^3-2x^2+x)m_{i-1}+(x^3-x^2)m_{i}
+$$
+参考 glTF 给出的定义<sup><a href="r2">[2]</a></sup>，替换系数和变量后可得：
+$$v_t = (2t^3 - 3t^2 + 1) * v_k + t_d(t^3 - 2t^2 + t) * b_k + (-2t^3 + 3t^2) * v_{k+1} + t_d(t^3 - t^2) * a_{k+1}$$
+# Reference
+
+1. <a id="r1" href="https://en.wikipedia.org/wiki/Cubic_Hermite_spline#:~:text=%E2%88%88%20%5B0%2C%201%5D.-,Interpolation%20on%20an%20arbitrary%20interval,-%5Bedit%5D">Cubic Hermite spline: Interpolation on an arbitrary interval -- wikipedia</a>
+2. <a id="r2" href="https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_007_Animations.md#cubic-spline-interpolation:~:text=this%20Wikipedia%20article-,Cubic%20Spline%20interpolation,-Cubic%20spline%20interpolation">gltfTutorial_007_Animations_Cubic Spline interpolation -- glTF Tutorial</a>

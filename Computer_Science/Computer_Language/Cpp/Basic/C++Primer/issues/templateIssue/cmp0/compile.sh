@@ -1,0 +1,1 @@
+g++ main.cpp tAdd.cpp add.cpp -o a.out

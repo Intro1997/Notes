@@ -1,0 +1,49 @@
+# 背景
+
+git clone 遇到几个问题：
+
+1. 即使设置了 ssh，Windows 也只能用 https clone，并且 ssh -T git@github.com 会失败
+2. windows 走 ssh 代理之后，https clone 失败
+3. macOS 更改 VPS 之后 git clone 失败
+
+## 1. only https clone
+
+1. 表现
+   按照步骤配置好 ssh 以及 config 之后，无论是 `ssh -T git@github.com` 还是 `git clone git@github.com/<owner>/<repo>.git` 都会失败，并且不是无权限就是连接失败。
+2. 原因
+   ssh 未走 proxy，在 `.ssh/config` 中添加 ProxyCommand 即可：
+
+```
+ProxyCommand "path/to/GitBash/mingw64/bin/connect.exe" -S your.proxy.address.x:port -a none %h %p
+Host github.com
+    Hostname ssh.github.com
+    Port 443
+    User git
+```
+
+并且设置执行一下：
+
+```shell
+git config --global url."ssh://git@ssh.github.com:443/".insteadOf "git@github.com:"
+```
+
+## 2. only ssh clone
+
+1. 表现
+   ssh clone 没问题，http clone 显示 OpenSSL 错误：
+
+```
+SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443
+```
+
+2. 原因
+   git http/https 未设置代理，使用如下配置即可：
+
+```shell
+$ git config --global url."https://mirror.ghproxy.com/https://github.com".insteadOf "https://github.com"
+$ git config --list --global
+...
+url.ssh://git@ssh.github.com:443/.insteadof=git@github.com:
+url.https://mirror.ghproxy.com/https://github.com.insteadof=https://github.com
+```
+这里是通过 mirror.ghproxy.com 代理 github 请求。

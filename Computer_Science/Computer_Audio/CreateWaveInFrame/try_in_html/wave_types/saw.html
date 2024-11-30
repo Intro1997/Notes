@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <h2>2. Sawtooth</h2>
+  <input type="text" id="saw_freq" value="440" />
+  <br />
+  <input
+    type="button"
+    id="console_chrome_saw_data"
+    value="console chrome saw data"
+  />
+  <br />
+  <input
+    type="button"
+    id="play_generated_saw_data"
+    value="play generated saw data"
+    onclick="playGeneratedSawData()"
+  />
+  <p>
+    注：chrome oscillator
+    实现的声音比较小，是因为离散傅立叶变换拟合的原因，实际上生成的数据更接近锯齿波
+  </p>
+  <img
+    src="./imgs/compare.png"
+    alt="generate 与 chrome 的对比"
+    height="200px"
+    width="400px"
+  />
+</html>
+<script src="https://unpkg.com/@free-side/audioworklet-polyfill/dist/audioworklet-polyfill.js"></script>
+<script src="../help_func.js"></script>
+<script src="./saw.js"></script>

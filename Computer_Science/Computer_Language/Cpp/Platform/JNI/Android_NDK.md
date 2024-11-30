@@ -1,0 +1,114 @@
+## Chapter 4
+
+- 使用 javaVM 创建 Native 与 Java 绑定的线程时，使用到了 AttachCurrentThreadAsDaemon 这个 API；Daemon 是什么？这个 API 和 AttachCurrentThread 的区别是什么？什么时候使用 AttachCurrentThread，什么时候使用 AttachCurrentThreadAsDaemon？
+
+  - `Daemon 是什么？`：Daemon 一般指守护进程，简单来说就是不具备控制终端的进程，概念参见《UNIX 环境高级编程》第 13 AttachCurrentThreadAsDaemon 中的 Daemon 是指 java 中的守护线程，通常被当作一种服务来使用。
+  - `这个 API 和 AttachCurrentThread 的区别是什么？`：如果一个 C++ 线程通过 AttachCurrentThread 绑定到 JVM，那么 JVM 会等待所有这类线程都结束后，JVM 才会退出；如果一个 C++ 线程通过 AttachCurrentThreadAsDaemon 绑定到 JVM，则 JVM 不会等待该线程主动结束，而是 JVM 结束后，直接结束进程，间接 kill 该线程<a href="#r1"><sup>[1]</sup></a>
+  - `什么时候使用 AttachCurrentThreadAsDaemon`：通常如果希望一个 C++ 线程希望随进程结束而结束，不希望主动结束时，考虑使用 AttachCurrentThreadAsDaemon，应用场景例如服务
+
+- 在调用 AttachCurrentThreadAsDaemon 之后，如果不使用 DetachCurrentThread，会有什么样的后果？
+  答：对于 AttachCurrentThread 的情况来说，在线程退出之前我们必须要调用 DetachCurrentThread 从虚拟机分离当前线程，不然会造成内存泄露，线程也不会退出。对于 native 层创建出来的线程，在调用 AttachCurrentThread 的时候会创建本地引用表，在调用 DetachCurrentThread 的时候会释放本地引用表。<a href="#r2"><sup>[2]</sup></a>；但对于 AttachCurrentThreadAsDaemon 来说，如果我们需要在应用程序结束之前主动结束线程，则应该调用 DetachCurrentThread 来避免内存泄漏；如果我们希望 attach 到的线程随着应用程序一起结束，则可以不使用 DetachCurrentThread，此时当进程结束时，该线程也会被强制结束。
+
+- 在使用 JavaVM 调用 AttachCurrentThreadAsDaemon 时，需要传入一个 JavaVMAttachArgs；这个结构体有个 group 成员，它的作用是什么？什么是 ThreadGroup？
+  答：线程组，用来管理一系列线程
+- 在 pthread_create 创建的线程退出的时候，如果不使用 pthread_exit，会有什么样的后果？
+  答：pthread_exit 用来显式退出一个进程，并将传入 pthread_exit 的参数返回给 pthread_join 的第二个参数
+
+```cpp
+#include <iostream>
+#include <pthread.h>
+
+void* foo(void* pArgs) {
+  std::cout << "in pthread foo\n";
+  int* ptr = new int(123);
+  pthread_exit(ptr);
+}
+
+int main() {
+  pthread_t fooP;
+  pthread_attr_t pAttr;
+  pthread_attr_init(&pAttr);
+  pthread_create(&fooP, &pAttr, foo, NULL);
+  void * rptr;
+  pthread_join(fooP, &rptr);
+  int* ptr = reinterpret_cast<int*>(rptr);
+  std::cout << *ptr << std::endl;
+  delete ptr;
+  return 0;
+}
+```
+
+除此之前没有其他作用了，同时也在函数退出之前，并不是必须要调用 pthread_exit；函数自然退出时也会隐式调用 pthread_exit<sup><a href="#r3">[3]</a></sup>
+
+- 使用 C++ std::thread 重写此例子
+  答：创建 std::thread 的过程就跳过了，主要是，如果想在 thread 绑定的线程执行的函数中析构 thread 时，若 thread 没有进行 join 或 detach，会在 thread 析构函数中调用 std::terminate 函数导致进程 abort，Android 没有 Abort 很可能是绑定到 JVM 后由 JVM 进行了处理；因此，如果需要在线程执行的函数中对 thread 对象进行析构时，进行下面两项中至少一项操作
+
+  - 需要在创建 thread 的对象的线程调用 join
+  - 在 delete 或析构发生前调用 detach
+
+- 下面这个 native 函数定义的作用是什么？我们什么时候可以使用它？
+
+```
+public class MyNativeClass {
+           public native synchronized int doSomething();
+... }
+```
+
+答：将 doSomething 这个 native 函数设置为同步方法，这意味着调用该函数时，java 执行栈会先获取监视器锁，之后调用该 native 方法，最后再释放监视器锁<sup><a href="#r4">[4]</a></sup>
+
+- ReleasePrimitiveArrayCritical 的第三个参数 mode 有哪些可指定的配置？分别代表什么含义？
+  答：
+
+  - 0
+    Update the data on the Java heap. Free the space used by the copy.
+  - JNI_COMMIT
+    Update the data on the Java heap. Do not free the space used by the copy.
+  - JNI_ABORT
+    Do not update the data on the Java heap. Free the space used by the copy.<sup><a href="#r5">[5]</a></sup>
+
+- ALooper_pollAll()、android_poll_source.process 以及 onAppCmd 之间的联系
+  答：参考[这里](./how_onAppCmd_be_called.md)
+
+- 三目运算符比较大小和纯 if 的效率差距
+  答：差不多，不用纠结，选择适合当前场景的使用就行。
+
+- 什么是管道，什么是 epoll
+
+- ANativeWindow_setBuffersGeometry 和 ANativeWindow_setBuffersDataSpace 的区别
+
+- Android Native Window y 轴方向？
+
+- why 0X000000FF is red?
+  答：pixel buffer 与大小端序有关
+
+- `EGLint CONTEXT_ATTRIBS[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};` 为什么只需要指定版本即可？
+  答：其他的基本配置与 DEBUG，配置方式（使用基本函数或者基本函数+废弃函数）<a href="#r7"><sup>[7]</sup></a>，是否使用 DEBUG 模式<a href="#r8"><sup>[8]</sup></a>，是否使用 robust buffer<a href="#r9"><sup>[9]</sup></a>以及是否向兼容旧版本的 OpenGL Context 等<a href="#r6"><sup>[6]</sup></a>，使用默认配置足够。
+
+- `eglCreateWindowSurface` 最后一个参数为什么指定为 nullptr？为什么不和 Display 一样需要设置呢？
+  答：其他配置是关于色彩空间和 RenderBuffer 以及 OpenVG 相关配置，目前不需要任何非默认配置。
+
+- 为什么从 `eglChooseConfig` 只获取一个 frame buffer（config_size 指定为 1）？这是否意味着 Surface 只有一个缓冲区呢？
+  答：我们可以使用 eglChooseConfig 查找所有匹配 attrib_list 的配置数量：
+  `If configs is NULL, no configs will be returned in configs. Instead, the total number of configs matching attrib_list will be returned in *num_config.`
+  config_size 这里表示的实际上是选择其中的几个配置，选择一种就好，和 framebuffer 本身是否为 back-buffered 无关
+
+- 如何确定创建的 EGLSurface 是一个 back-buffered window surface
+  答：通过 eglCreateWindowSurface 创建 surface 时，attrib_list 中 EGL_RENDER_BUFFER 的 默认值是 EGL_BACK_BUFFER<a href="#r10"><sup>[10]</sup></a>
+
+- Android NDK Cmake 是如何找到系统 so 的？
+答：android.toolchain.cmake 中有指定 CMAKE_SYSROOT 变量（编译器的 --sysroot 选项）为 `${ANDROID_TOOLCHAIN_ROOT}/sysroot`
+
+## Reference
+
+1. <a id="r1" href="https://blog.51cto.com/u_15018708/2647710">面试官: 谈谈什么是守护线程以及作用 ?</a>
+2. <a id="r2" href="https://www.cnblogs.com/zuojie/p/16798259.html">JNI 中 AttachCurrentThread 和 DetachCurrentThread 的问题</a>
+3. <a id="r3" href="https://man7.org/linux/man-pages/man3/pthread_exit.3.html#:~:text=Performing%20a%20return%20from%20the%20start%20function%20of%20any%20thread%20other%0A%20%20%20%20%20%20%20than%20the%20main%20thread%20results%20in%20an%20implicit%20call%20to%0A%20%20%20%20%20%20%20pthread_exit()%2C%20using%20the%20function%27s%20return%20value%20as%20the%20thread%27s%0A%20%20%20%20%20%20%20exit%20status.">pthread_exit(3) — Linux manual page</a>
+4. <a id="r4" href="https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-2.html#jvms-2.11.10:~:text=When%20invoking%20a%20method%20for%20which%20ACC_SYNCHRONIZED%20is%20set%2C%20the%20executing%20thread%20enters%20a%20monitor%2C%20invokes%20the%20method%20itself%2C%20and%20exits%20the%20monitor%20whether%20the%20method%20invocation%20completes%20normally%20or%20abruptly.">Oracle-Java Virtual Machine Specification-2.11.10. Synchronization</a>
+5. <a id="r5" href="https://www.ibm.com/docs/en/sdk-java-technology/8?topic=jni-copying-pinning#:~:text=The%20possible%20settings%20of%20the%20mode%20flag%20are%3A">All products, IBM SDK, Java Technology Edition, 8-Using the mode flag</a>
+6. <a id="r6" href="https://registry.khronos.org/EGL/sdk/docs/man/html/eglCreateContext.xhtml">khronos Doc eglCreateContext</a>
+7. <a id="r7" href="https://stackoverflow.com/a/62132159/14419237">stackoverflow-Using both Opengl CORE functions along with Comptability profile - GLFW</a>
+8. <a id="r8" href="https://stackoverflow.com/a/67544748/14419237">OpenGL debug or verbose information to console</a>
+9. <a id="r9" href="https://registry.khronos.org/OpenGL/extensions/KHR/KHR_robust_buffer_access_behavior.txt#:~:text=on%20p.%0A%20%20%20%2058%3A%0A%20%20%20%20%0A%20%20%20%22-,Robust%20buffer%20access%20can,-be%20enabled%20by">khronos KHR_robust_buffer_access_behavior</a>
+10. <a id="r10" href="https://registry.khronos.org/EGL/sdk/docs/man/html/eglCreatePlatformWindowSurface.xhtml">eglCreatePlatformWindowSurface</a> (eglCreateWindowSurface is identical to that of eglCreatePlatformWindowSurface)
+
+lost vs lose?(lose focus or lost focus?)

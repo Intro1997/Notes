@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./index.css" />
+    <title>Temporal masking test</title>
+  </head>
+  <body>
+    <h1>Temporal Masking Test</h1>
+    <label>Playing one second audio data with milli-second interval.</label>
+    <br />
+    <label id="operation_hint"
+      >Enter interval milli-second time and click button to playing:</label
+    >
+    <br />
+    <br />
+    <input type="text" id="interval_time_ms" />
+    <input type="button" id="play" value="play" onclick="click_to_start()" />
+  </body>
+  <script src="./temporal_masking.js"></script>
+</html>

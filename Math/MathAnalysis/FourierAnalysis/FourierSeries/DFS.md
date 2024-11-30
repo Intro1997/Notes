@@ -1,0 +1,105 @@
+# 离散傅立叶级数
+
+对于周期函数，我们已经可以使用一般的通式来描述其通过傅立叶变换展开后的复数形式：
+
+$$
+\begin{align}
+f(x)&=\sum_{n=-\infty}^{\infty}C_ne^{in\omega x}\\
+C_n&=\frac{1}{T}\int_{0}^{T}f(x)e^{-in\omega x}dx\\
+\end{align}
+$$
+
+为了方便理解，我们将 $x$ 更换为 $t$
+
+$$
+\begin{align}
+f(t)&=\sum_{n=-\infty}^{\infty}C_ne^{in\omega t}\\
+C_n&=\frac{1}{T}\int_{0}^{T}f(t)e^{-in\omega t}dt\\
+\end{align}
+$$
+
+## 推导
+
+我们令 $T=N$ 表示函数 $f(t)$ 的周期。对于离散情形，我们将积分修改为累和，因此：
+
+$$
+\begin{cases}
+dt = \Delta t\\
+T = N\Delta t\\
+\omega = \frac{2\pi}{T} = \frac{2\pi}{N\Delta t}\\
+t = k\Delta t
+\end{cases}
+$$
+
+将上述条件代入 $C_n$：
+
+$$
+\begin{align}
+C_n&=\frac{1}{T}\int_{0}^{T}f(t)e^{-in\omega t}dt\\
+&=\frac{1}{N\Delta t}\sum_{k=0}^{N-1}[f(k\Delta t)e^{-in\frac{2\pi}{N\Delta t} k\Delta t}]\Delta t\\
+&=\frac{1}{N}\sum_{k=0}^{N-1}f(k\Delta t)e^{-in\frac{2\pi}{N}k}
+\end{align}
+$$
+
+由于 $f(k\Delta t)$ 可以看作是离散的点，所以我们可以用一组周期为 N 的离散点序列 $x[k]$ 来代替 $f(k\Delta t)$；同时得到的 $C_n$ 也可以用长度为 $N$，下标为 $n$ 的离散序列 $X[n]$ 表示，最后得到：
+
+$$
+X[n]=\frac{1}{N}\sum_{k=0}^{N-1}x[k]e^{-in\frac{2\pi}{N}k}
+$$
+
+这被称作离散傅立叶变换。现在我们来求它的逆变换。
+
+<font color="red">注：这里理论上应该可以通过 $f(t)$ 的表达式推导出来的，但是我不太理解它的物理意义，所以这里我使用数学上的方法进行推导.</font>
+
+为了得到由 $X[n]$ 表达 $x[k]$ 的等式，我们先同时对两边进行 $n=0$ 到 $n=N-1$ 的累加：
+
+$$
+\begin{align}
+X[n]&=\frac{1}{N}\sum_{k=0}^{N-1}x[k]e^{-in\frac{2\pi}{N}k}\\
+\sum^{N-1}_{n=0}X[n]&=\frac{1}{N}\sum^{N-1}_{n=0}\sum_{k=0}^{N-1}x[k]e^{-in\frac{2\pi}{N}k}\\
+\end{align}
+$$
+
+再对两边同时乘以 $e^{in\frac{2\pi}{N}r}$：
+
+$$
+\begin{align}
+\sum^{N-1}_{n=0}X[n]e^{in\frac{2\pi}{N}r}&=\frac{1}{N}\sum^{N-1}_{n=0}\sum_{k=0}^{N-1}x[k]e^{-in\frac{2\pi}{N}k}e^{in\frac{2\pi}{N}r}\\
+\sum^{N-1}_{n=0}X[n]e^{in\frac{2\pi}{N}r}&=\frac{1}{N}\sum_{k=0}^{N-1}x[k]\sum^{N-1}_{n=0}e^{i(r-k)n\frac{2\pi}{N}}\\
+\end{align}
+$$
+
+下面分类讨论 $\sum^{N-1}_{n=0}e^{i(r-k)n\frac{2\pi}{N}}$：
+
+1. 当 $k=r$ 时，$\sum^{N-1}_{n=0}e^{i(r-k)n\frac{2\pi}{N}}$ 为 N。
+2. 当 $k\neq r$ 时，根据单位根之和为 0，$\sum^{N-1}_{n=0}e^{i(r-k)n\frac{2\pi}{N}}$ 为 0。
+
+因此只有 $x[r]$ 得以保留，因此有：
+
+$$
+\begin{align}
+\sum^{N-1}_{n=0}X[n]e^{in\frac{2\pi}{N}r}&=\frac{1}{N}\sum^{N-1}_{n=0}\sum_{k=0}^{N-1}x[k]e^{-in\frac{2\pi}{N}k}e^{in\frac{2\pi}{N}r}\\
+\sum^{N-1}_{n=0}X[n]e^{in\frac{2\pi}{N}r}&=\frac{1}{N}\cdot x[r]\cdot N\\
+x[r]&=\sum^{N-1}_{n=0}X[n]e^{in\frac{2\pi}{N}r}\\
+\end{align}
+$$
+
+为了贴合离散傅立叶级数的符号表示，我们使用 $k$ 来代替 $r$，则有：
+
+$$
+x[k]=\sum^{N-1}_{n=0}X[n]e^{in\frac{2\pi}{N}k}
+$$
+
+这样，我们就得到了离散傅立叶级数的逆变换表达式。我们把两个公式放在一起：
+
+$$
+\begin{cases}
+x[k]&=\sum^{N-1}_{n=0}X[n]e^{in\frac{2\pi}{N}k}\\
+X[n]&=\frac{1}{N}\sum_{k=0}^{N-1}x[k]e^{-in\frac{2\pi}{N}k}
+\end{cases}
+$$
+
+# Reference
+
+1. [离散傅里叶变换的详细推导 —— 知乎](https://zhuanlan.zhihu.com/p/631644492)
+2. [信号与系统 —- 西安交通大学出版社](https://book.douban.com/subject/1062827/)

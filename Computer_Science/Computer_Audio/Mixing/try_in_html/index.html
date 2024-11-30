@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./index.css" />
+    <title>Check 4 channel mixing</title>
+  </head>
+  <body>
+    <h2>Description</h2>
+    <label
+      >We create four audio channels buffer using 261.6Hz(do) and 329.6Hz(mi)
+      that each frequency has two channel. Then we connect AudioBufferSourceNode
+      to AudioGainNode, which will output 2 channel buffer. We alse mix the four
+      channels buffer using (left0+left1)/2.0 formula, then compare with the
+      output of AudioGainNode to verify my mix formula. You can check the mix
+      result and compare result in console log.
+    </label>
+    <h2>Try it</h2>
+    <label>play do and mi in buffer: </label>
+    <button id="do_mi_button">play</button>
+    <br />
+  </body>
+  <script src="https://unpkg.com/@free-side/audioworklet-polyfill/dist/audioworklet-polyfill.js"></script>
+  <script src="./mixing_test.js"></script>
+</html>

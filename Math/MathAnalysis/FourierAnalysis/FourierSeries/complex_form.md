@@ -1,0 +1,87 @@
+# 傅立叶级数的复数形式
+
+我们之前推导出了傅立叶级数的一般形式：
+
+$$
+\begin{align}
+&f(x)=\frac{a_0}{2} + \sum^{\infty}_{n=1}a_ncos(n\omega x) + \sum^{\infty}_{n=1}b_nsin(n\omega x)\\
+&\begin{cases}
+a_n=\frac{2}{T}\int_{0}^{T}f(x)\cdot cos(n\omega x)dx\\
+b_n=\frac{2}{T}\int_{0}^{T}f(x)\cdot sin(n\omega x)dx
+\end{cases}
+\end{align}
+$$
+
+现在我们要推导傅立叶级数的复数形式，其中要利用到欧拉公式：
+
+$$
+\begin{align}
+e^{i\theta} &= cos(\theta) + isin(\theta)\\
+cos{\theta} &= \frac{e^{i\theta} + e^{-i\theta}}{2}\\
+sin{\theta} &= \frac{-i}{2} \cdot \frac{e^{i\theta} - e^{-i\theta}}{2}
+\end{align}
+$$
+
+将将公式 (4) 和 (5) 代入公式 (1)：
+
+$$
+\begin{align}
+f(x)&=\frac{a_0}{2} + \sum^{\infty}_{n=1}a_ncos(n\omega x) + \sum^{\infty}_{n=1}b_nsin(n\omega x)\\
+&=\frac{a_0}{2} + \sum^{\infty}_{n=1}a_n\frac{e^{in\omega x} + e^{-in\omega x}}{2} + \sum^{\infty}_{n=1}b_n(-i)\frac{e^{in\omega x} - e^{-in\omega x}}{2}\\
+&=\frac{a_0}{2} + \sum^{\infty}_{n=1}a_n\frac{e^{in\omega x} + e^{-in\omega x}}{2} + \sum^{\infty}_{n=1}b_n\frac{ie^{-in\omega x} - ie^{in\omega x}}{2}\\
+&=\frac{a_0}{2} + \sum^{\infty}_{n=1}e^{in\omega x}(\frac{a_n-ib_n}{2})+\sum^{\infty}_{n=1}e^{-in\omega x}(\frac{a_n+ib_n}{2})\\
+&=\frac{a_0}{2} + \sum^{\infty}_{n=1}e^{in\omega x}(\frac{a_n-ib_n}{2})+\sum^{-1}_{n=-\infty}e^{in\omega x}(\frac{a_{-n}+ib_{-n}}{2})\\
+\end{align}
+$$
+
+接下来我们分别来看看 $a_n$ 和 $a_{-n}$ 以及 $b_n$ 和 $b_{-n}$ 之间的关系
+
+对于 $a_{-n}$
+
+$$
+\begin{align}
+a_{-n} &= \frac{2}{T}\int_{0}^{T}f(x)\cdot cos(-n\omega x)dx\\
+&=\frac{2}{T}\int_{0}^{T}f(x)\cdot cos(n\omega x)dx\\
+&=a_n
+\end{align}
+$$
+
+对于 $b_{-n}$
+
+$$
+\begin{align}
+b_{-n} &= \frac{2}{T}\int_{0}^{T}f(x)\cdot sin(-n\omega x)dx\\
+&=-\frac{2}{T}\int_{0}^{T}f(x)\cdot sin(n\omega x)dx\\
+&=-b_n
+\end{align}
+$$
+
+故原式变为
+
+$$
+\begin{align}
+f(x)&=\frac{a_0}{2} + \sum^{\infty}_{n=1}e^{in\omega x}(\frac{a_n-ib_n}{2})+\sum^{-1}_{n=-\infty}e^{in\omega x}(\frac{a_{-n}+ib_{-n}}{2})\\
+&=\sum_{0}^{n=0}e^{in\omega x}\frac{a_0-ib_0}{2} + \sum^{\infty}_{n=1}e^{in\omega x}(\frac{a_n-ib_n}{2})+\sum^{-1}_{n=-\infty}e^{in\omega x}(\frac{a_{n}-ib_{n}}{2})\\
+&=\sum_{n=-\infty}^{\infty}e^{in\omega x}\frac{a_n-ib_n}{2}
+\end{align}
+$$
+
+我们用 $C_n$ 表示 $\frac{a_n-ib_n}{2}$，并来研究一下是否可以进一步简化 $C_n$：
+
+$$
+\begin{align}
+C_n &= \frac{a_n-ib_n}{2}\\
+&= \frac{\frac{2}{T}\int_{0}^{T}f(x)\cdot cos(n\omega x)dx-\frac{2i}{T}\int_{0}^{T}f(x)\cdot sin(n\omega x)dx}{2}\\
+&=\frac{1}{T}\int_{0}^{T}f(x)[cos(n\omega x)-isin(n\omega x)]dx\\
+&=\frac{1}{T}\int_{0}^{T}f(x)e^{-in\omega x}dx\\
+\end{align}
+$$
+
+综上所述，傅立叶级数的复数形式表示为：
+
+$$
+\begin{align}
+f(x)&=\sum_{n=-\infty}^{\infty}C_ne^{in\omega x}\\
+C_n&=\frac{1}{T}\int_{0}^{T}f(x)e^{-in\omega x}dx\\
+\end{align}
+$$

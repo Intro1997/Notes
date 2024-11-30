@@ -1,0 +1,138 @@
+关于傅立叶级数的来源可以参考[这里](./origin.md)
+
+# 傅立叶级数的 $2\pi$ 形式
+
+对于满足狄利克雷定理的周期函数函数 $f(x)$，可以使用傅立叶级数对齐进行展开，结果如下：
+
+$$
+f(x)=c_0 + \sum^{\infty}_{n=1}a_ncos(nx) + \sum^{\infty}_{n=1}b_nsin(nx)
+$$
+
+然而这里的 $c_0$，$a_n$，$b_n$ 参数都是未定的，我们需要通过一些变换来求解它们。
+
+## 参数求解
+
+### 1. $a_n$
+
+我们先求 $a_n$，对公式两边同时乘以 $cos(mx)$：
+
+$$
+\begin{align}
+f(x)&=c_0 + \sum^{\infty}_{n=1}a_ncos(nx) + \sum^{\infty}_{n=1}b_nsin(nx)\\
+f(x)\cdot cos(mx)&=c_0\cdot cos(mx) + \sum^{\infty}_{n=1}a_ncos(nx)\cdot cos(mx) + \sum^{\infty}_{n=1}b_nsin(nx)\cdot cos(mx)
+\end{align}
+$$
+
+接着我们对两边在 $[-\pi,\pi]$ 上进行积分：
+
+$$
+\begin{align}
+f(x)\cdot cos(mx)&=c_0\cdot cos(mx) + \sum^{\infty}_{n=1}a_ncos(nx)\cdot cos(mx) + \sum^{\infty}_{n=1}b_nsin(nx)\cdot cos(mx)\\
+\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx&=\int_{-\pi}^{\pi}c_0\cdot cos(mx)dx + \int_{-\pi}^{\pi}\sum^{\infty}_{n=1}a_ncos(nx)\cdot cos(mx)dx + \int_{-\pi}^{\pi}\sum^{\infty}_{n=1}b_nsin(nx)\cdot cos(mx)dx
+\end{align}
+$$
+
+通过 [三角函数的正交性](./orthogonality_of_trigonometric_functions.md) 以及 余弦函数在 $[-\pi, \pi]$ 上的积分，我们可知：
+
+$$
+\begin{cases}
+c_0\cdot cos(mx)dx = 0\\
+\int_{-\pi}^{\pi}\sum^{\infty}_{n=1}a_ncos(nx)\cdot cos(mx)dx = a_m\int_{-\pi}^{\pi}cos^2(mx)dx\\
+\int_{-\pi}^{\pi}\sum^{\infty}_{n=1}b_nsin(nx)\cdot cos(mx)dx = 0
+\end{cases}
+$$
+
+所以原式变为：
+
+$$
+\begin{align}
+\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx&=a_m\int_{-\pi}^{\pi}cos^2(mx)dx
+\end{align}
+$$
+
+根据积化和差公式：
+
+$$
+cos\alpha \cdot cos\beta = \frac{1}{2}[\cos(\alpha+\beta) + cos(\alpha-\beta)]
+$$
+
+可得：
+
+$$
+\begin{align}
+\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx&=a_m\int_{-\pi}^{\pi}cos^2(mx)dx\\
+\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx&=\frac{a_m}{2}\int_{-\pi}^{\pi}[cos(2mx)+cos(0)]dx\\
+\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx&=\frac{a_m}{2}[sin(2mx)+x]\big|^\pi_{-\pi}\\
+\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx&=\frac{a_m}{2}[0 + 2\pi]dx\\
+\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx&=a_m\pi\\
+a_m &= \frac{1}{\pi}\int_{-\pi}^{\pi}f(x)\cdot cos(mx)dx\\
+a_n &= \frac{1}{\pi}\int_{-\pi}^{\pi}f(x)\cdot cos(nx)dx
+\end{align}
+$$
+
+### 2. $b_n$
+
+类似的，为了求解 $b_n$，我们对公式两边同时乘以 $sin(mx)$，同时对两边积分：
+
+$$
+\begin{align}
+f(x)&=c_0 + \sum^{\infty}_{n=1}a_ncos(nx) + \sum^{\infty}_{n=1}b_nsin(nx)\\
+f(x)\cdot sin(mx)&=c_0\cdot sin(mx) + \sum^{\infty}_{n=1}a_ncos(nx)\cdot sin(mx) + \sum^{\infty}_{n=1}b_nsin(nx)\cdot sin(mx)\\
+\int_{-\pi}^{\pi}f(x)\cdot sin(mx)dx&=\int_{-\pi}^{\pi}c_0\cdot sin(mx)dx + \int_{-\pi}^{\pi}\sum^{\infty}_{n=1}a_ncos(nx)\cdot sin(mx)dx + \int_{-\pi}^{\pi}\sum^{\infty}_{n=1}b_nsin(nx)\cdot sin(mx)dx\\
+\int_{-\pi}^{\pi}f(x)\cdot sin(mx)dx&=0 + 0 + \int_{-\pi}^{\pi}b_msin(mx)\cdot sin(mx)dx\\
+\int_{-\pi}^{\pi}f(x)\cdot sin(mx)dx&=b_m\int_{-\pi}^{\pi}sin(mx)\cdot sin(mx)dx\\
+\int_{-\pi}^{\pi}f(x)\cdot sin(mx)dx&=-\frac{b_m}{2}\int_{-\pi}^{\pi}[cos(2mx)-cos(0)]dx\\
+\int_{-\pi}^{\pi}f(x)\cdot sin(mx)dx&=-\frac{b_m}{2}\cdot(0-2\pi)\\
+\int_{-\pi}^{\pi}f(x)\cdot sin(mx)dx&=b_m\pi\\
+b_m&=\frac{1}{\pi}\int_{-\pi}^{\pi}f(x)\cdot sin(mx)dx\\
+b_n&=\frac{1}{\pi}\int_{-\pi}^{\pi}f(x)\cdot sin(nx)dx\\
+\end{align}
+$$
+
+### 3. $c_0$
+
+为了求解 $c_0$ 我们修改一下等式：
+
+$$
+f(x)=c_0\cdot cos(0) + \sum^{\infty}_{n=1}a_ncos(nx) + \sum^{\infty}_{n=1}b_nsin(nx)
+$$
+
+接着对两边积分：
+
+$$
+\int^{\pi}_{-\pi}f(x)dx=\int^{\pi}_{-\pi}c_0\cdot cos(0) + \int^{\pi}_{-\pi}\sum^{\infty}_{n=1}a_ncos(nx) + \int^{\pi}_{-\pi}\sum^{\infty}_{n=1}b_nsin(nx)
+$$
+
+由于正弦和余弦函数在一个周期内的积分为 0，等式变为
+
+$$
+\begin{align}
+\int^{\pi}_{-\pi}f(x)dx&=\int^{\pi}_{-\pi}c_0\cdot cos(0)dx + \int^{\pi}_{-\pi}\sum^{\infty}_{n=1}a_ncos(nx)dx + \int^{\pi}_{-\pi}\sum^{\infty}_{n=1}b_nsin(nx)dx\\
+\int^{\pi}_{-\pi}f(x)dx&=\int^{\pi}_{-\pi}c_0\cdot 1dx\\
+\int^{\pi}_{-\pi}f(x)dx&=c_0x\big|^{\pi}_{-\pi}\\
+\int^{\pi}_{-\pi}f(x)dx&=2\pi c_0\\
+c_0&=\frac{1}{2\pi}\int^{\pi}_{-\pi}f(x)dx\\
+\end{align}
+$$
+
+之前我们求出来了 $a_n$：
+$$a_n = \frac{1}{\pi}\int_{-\pi}^{\pi}f(x)\cdot cos(nx)dx$$
+
+当 $n=0$ 时：
+
+$$a_0 = \frac{1}{\pi}\int_{-\pi}^{\pi}f(x)dx = 2c_0$$
+
+故 $c_0=\frac{1}{2}a_0$
+
+## 完整公式
+
+所以傅立叶变换的完整公式为：
+
+$$
+f(x)=c_0 + \sum^{\infty}_{n=1}a_ncos(nx) + \sum^{\infty}_{n=1}b_nsin(nx)\\
+\begin{cases}
+a_n &= \frac{1}{\pi}\int_{-\pi}^{\pi}f(x)\cdot cos(nx)dx\\
+b_n&=\frac{1}{\pi}\int_{-\pi}^{\pi}f(x)\cdot sin(nx)dx\\
+c_0&=\frac{1}{2}a_0
+\end{cases}
+$$

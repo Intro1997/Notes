@@ -1,0 +1,41 @@
+<html>
+  <h2>1. Sine</h2>
+  <input type="text" placeholder="enter freq" id="sinx_freq" value="440" />
+  <input type="text" placeholder="enter detune" id="sinx_detune" value="2.5" />
+  <br />
+  <input
+    type="button"
+    id="play_generated_sine"
+    value="play generated sine"
+    onclick="play_generated_sine()"
+  />
+  <input
+    type="button"
+    id="play_chrome_oscillator_sine"
+    value="play chrome oscillator sine"
+    onclick="play_origin_sine()"
+  />
+  <input
+    type="button"
+    id="console_origin_sine_data"
+    value="console origin sine data"
+  />
+  <br />
+  <input
+    type="button"
+    id="compare_generated_with_chrome"
+    value="compare generated with chrome"
+    onclick="alert('chrome oscillator 生成的数据与通过 sinx 生成的数据误差随时间增大，并且通过 AudioWorkerlet 获取到的 oscillator 输出存在某一段重复出现一次的问题，因此不如直接比较 generated 和 sinx 的数据误差。')"
+  />
+  <br />
+  <input
+    type="button"
+    id="compare_generated_with_nature"
+    value="compare generated with nature"
+    onclick="compareGeneratedWithNature()"
+  />
+  <br />
+  <p id="compare_result"></p>
+</html>
+<script src="../help_func.js"></script>
+<script src="./sine.js"></script>

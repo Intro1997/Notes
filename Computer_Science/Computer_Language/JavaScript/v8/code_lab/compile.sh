@@ -1,0 +1,1 @@
+g++ -I. -Iinclude samples/my_test.cc -o my_test -fno-rtti -lv8_monolith -lv8_libbase -lv8_libplatform -ldl -Lout.gn/arm64.release.sample/obj/ -pthread -std=c++17 -DV8_COMPRESS_POINTERS -DV8_ENABLE_SANDBOX

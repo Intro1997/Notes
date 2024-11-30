@@ -1,0 +1,141 @@
+## 模型格式以及三方模型库总结
+
+# GLTF
+
+Tools：
+
+1. [glTF sample viewer](https://github.khronos.org/glTF-Sample-Viewer-Release/) (gltf 文件本身就是 JSON)
+2. [四元数转欧拉角](https://quaternions.online/)
+
+<p align="center">
+<img src="./gltfJsonStructure.png" /><br>
+<a name="gltfJsonStructure-png"></a>Image 2a: The glTF JSON structure
+</p>
+
+## GLTF 模型数据
+
+### Scene
+
+1. 一个 Scene 只包含多个 nodes 索引， nodes 是数据集合，而非模型
+
+### Node
+
+1. 一个 Node 表示一组数据集合，不能用单一的概念描述（例如不能用模型来描述 node），类似 C++ 无方法的 Object
+2. 这个数据集合可以包含 mesh（模型）、matrix（TRS 矩阵）、translate（T 矩阵），rotation（R 矩阵）、scale（S 矩阵）、weights（morph target weight）、children（子节点）、skin（骨骼和蒙皮数据）
+3. 四元数的笔记可以参考[这里](./quaternion/quaternion.md)
+
+### Mesh
+
+1. 一个包含图元以及 morph target weights 的数据集合
+2. 这个数据集合可以包含 primitive（模型数据）、weight（morph target weight）
+
+#### Primitive
+
+1. 一个包含 shader render data（attribute、material）以及 morph target 数据的数据集合
+2. 这个数据集合可以包含 attribute（vertex shader data）、target（morph target data）、material（fragment shader data）
+
+下列 attribute 数据均为 accessor index
+
+```
+attribute
+├── POSITION（模型顶点数据）
+├── TEXCOORD_0（纹理坐标数据）
+...
+├── TEXCOORD_N
+├── JOINTS_0（骨骼数据 ）
+...
+├── JOINTS_N
+├── WEIGHTS_0（骨骼权重）
+...
+├── WEIGHTS_N
+├── TANGENT
+...
+```
+
+### Buffer
+
+1. 包含数据路径和数据长度的数据集合
+2. 这个数据集合包含 url 和 ByteLength
+
+### BufferView
+
+1. 包含对 Buffer 解析方式以及绑定 GL target 类型的数据集合
+2. 可以包含 buffer（index array of buffer）、bufferOffset、bufferStride、bufferLength、target（GL target，例如 GL_VERTEX_ARRAY）
+
+### Accessor
+
+1. 包含对 BufferView 的解析方式以及对部分顶点的修改
+2. Sparse 包含 indices 和 value，作用是将 indices 对应的顶点用 value 进行替换
+
+### Texture
+
+1. 此数据集合包含 source 和 sampler 两个属性，source 存储 image 节点的 index，sampler 存储该 texture 的渲染方式（插值方式和环绕方式）
+
+### Material
+
+1. 教程中只包含了 pbrMetallicRoughness 这个属性，pbrMetallicRoughness 内部可以使用 texture 作为 base color，另外还有 metallic（金属度） 和 roughness（粗糙度） 两个值
+
+## GLTF 动画
+
+### Animation
+
+1. 该数据集合包含两个节点，channel 和 sampler。channel 包含 node（要播放动画的节点） 和 path（执行 sampler 变换的节点）；sampler 包含 input（accessor 的 index）、output（accessor 的 index） 和 interploation（插值方式）
+
+2. interpolation 有三种（step、linear 和 cubic spline），cubic spline 可以参阅同目录下的 [cubic_spline_interpolation.md](./cubic_spline_interpolation.md)
+
+### Skin
+
+1. 包含 joints（关节点）和 inverseBindMatrices 的数据集合
+2. joints 是一个含有 node index 的数组，这样的 node 通常只表示一种变换
+3. mesh.primitive.attribute 中的 JOINTS 引用了 joints，间接引用了变换
+4. vertex shader 中，这种变换的顺序为：
+
+```
+globalTransformMat * inverseBindMatrices * vec4
+```
+
+5. mesh.primitive.attribute 中的 WEIGHTS 则表示对应 JOINTS 变换的程度
+
+# Assimp
+
+## Issue
+
+1. 不完全支持 GLTF 的 Morph Target：
+   assimp-5.3.0 中，虽然可以在 `scene->mAnimations[i]->mMorphMeshChannels[j]->mKeys[k]` 中看到 gltf targets 节点应用到 morph 变换（忽略 weight 完全变换）时的最终结果，但因为 `scene->mMeshes[i]->mMethod` 中无法正确识别到 gltf 中，animations.samplers.interpolation 节点中的插值类型，所以无法支持 morph target 变换。[这里](https://github.com/assimp/assimp/issues/5303) 说明了这个 mMethod 值一直都是 0x0。
+2. TicksPerSecond 错误
+   assimp-5.3.0 中，给定一个具有动画帧 [0, 0.5, 1.0, 1.5, 2.0] 的动画序列数据，assimp 可以正确读出时间点和总时间长度，但是无法正确给出 mTicksPerSecond 数据，该数据始终为 1000，不过不会太影响使用，也可以通过其他属性计算获得
+3. 不支持读取 gltf interpolation
+   阅读了 assimp-5.3.0 源码：`assimp/code/AssetLib/glTF2/glTF2Importer.cpp:1302`，CreateNodeAnim 方法中的 AnimationSamplers 实际上包含了 gltf 的 interpolation 数据，但后续代码中只是将这个数据作为读取数据的 offset：
+   ```cpp
+   if (samplers.translation && samplers.translation->input && samplers.translation->output) {
+      float *times = nullptr;
+      samplers.translation->input->ExtractData(times);
+      aiVector3D *values = nullptr;
+      samplers.translation->output->ExtractData(values);
+      anim->mNumPositionKeys = static_cast<uint32_t>(samplers.translation->input->count);
+      anim->mPositionKeys = new aiVectorKey[anim->mNumPositionKeys];
+      unsigned int ii = (samplers.translation->interpolation == Interpolation_CUBICSPLINE) ? 1 : 0; // here
+      for (unsigned int i = 0; i < anim->mNumPositionKeys; ++i) {
+          anim->mPositionKeys[i].mTime = times[i] * kMillisecondsFromSeconds;
+          anim->mPositionKeys[i].mValue = values[ii];
+          ii += (samplers.translation->interpolation == Interpolation_CUBICSPLINE) ? 3 : 1; // here
+      }
+      delete[] times;
+      delete[] values;
+   } else if (node.translation.isPresent) {
+      anim->mNumPositionKeys = 1;
+      anim->mPositionKeys = new aiVectorKey[anim->mNumPositionKeys];
+      anim->mPositionKeys->mTime = 0.f;
+      anim->mPositionKeys->mValue.x = node.translation.value[0];
+      anim->mPositionKeys->mValue.y = node.translation.value[1];
+      anim->mPositionKeys->mValue.z = node.translation.value[2];
+   }
+   ```
+   ~~似乎由于 gltf 本身有 LINEAR，STEP 和 CUBICSPLINE 三种插值方式，并且如果使用 CUBICSPLINE 的话，按照源代码的逻辑，它的数据类型应该是 vec4（这里还没有学习 CUBICSPLINE，还需要再看看），但是这里似乎就没办法对 rotation（四元数） 判断插值方式了。~~ 这里应该不是问题，cubic spline 插值确实需要 4 个顶点才可以计算，四元数和插值没有关系。
+4. assimp/code/AssetLib/glTF2/glTF2Importer.cpp 内部读取了 glTF "target" 内的数据，并且全部作为偏移量与对应顶点数据相加，导致之前的数据丢失
+
+   ```cpp
+   658     aiAnimMesh.mVertices[vertexId] += positionDiff[vertexId];
+   ```
+
+   这里直接给出了变化后的最终结果，morph target 动画本身的变化趋势可能是单向的（起点终点之间没有其他趋势的变化），等了解 morph target 之后再来看看这里吧

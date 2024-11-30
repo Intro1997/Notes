@@ -1,0 +1,6 @@
+当需要针对当前项目做一些配置，但又找不到 `.vscode/settings.json` 文件，可以通过一下方式：
+
+1. `cmd+shift+p`(mac) 或者 `ctrl+shift+p`(windows/linux) 打开命令面板
+2. 执行 `Open Workspace Setting (JSON)`
+
+VSCode 的一些环境变量可以参考[这里](https://code.visualstudio.com/docs/editor/variables-reference)
