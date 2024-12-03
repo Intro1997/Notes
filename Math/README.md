@@ -2,14 +2,14 @@
 
 ### 1. vector
 
-- [vector](./LinearAlgebra/vector/vector.md)
+- [vector](./LinearAlgebra/vector/vector.mdx)
 
 ## MathAnalysis
 
 ### 1. FourierAnalysis
 
-- [FourierSeries](./MathAnalysis/FourierAnalysis/FourierSeries/overview.md)
+- [FourierSeries](./MathAnalysis/FourierAnalysis/FourierSeries/overview.mdx)
 
 ## FurtherMath
 
-- [important limits](./FurtherMath/important_limits.mds)
+- [important limits](./FurtherMath/important_limits.mdx)
