@@ -1,0 +1,424 @@
+### 1. 符号表解析
+question：
+    1. 符号解析的目的是将符号引用和符号定义连接起来
+        1. 什么是符号引用？
+        2. 什么是符号解析？
+    2. 编译器和汇编器把代码和数据定义在不同的节中，起始地址为 0，linker 将符号定义和对应的内存地址联系起来，从而重新定位这些
+    section 的地址，并修改符号引用将符号引用指向符号定义对应的内存地址
+    3. .bss 存放未初始化的全局变量和静态变量，但仅仅只是一个占位符，那么既然它不占用空间，怎么标识出全局和静态变量呢？
+    （变量名称不存在 .data 和 .bss section 里面） 
+ 
+note：
+    1. objdump -s --section .data a.out # 查看 a.out 的 .data section
+
+
+注意：a.out （gcc main.c sum.c 得到）对应的文件有两个：
+```c
+// main.c
+int sum(int *a, int n);
+
+int array[3] = {1, 2};
+
+int main(){
+    int val = sum(array, 2);
+    return val;
+}
+
+
+// sum.c
+int sum(int *a, int n){
+    int i, s = 0;
+
+    for(int i = 0; i < n; i++){
+        s += a[i];
+    }
+    return s;
+}
+```
+
+
+虽然符号表并不关心非全局非静态的本地变量符号，但是 compiler 会在 .symtab 中创建局部静态变量的唯一名称，并在 .data（数据不为 0 时） 和 .bss（数据为 0 时） 为其分配空间：
+例如：
+```c
+// tmp.c
+int a = 12;
+
+int f(){
+    static int x = 0;
+    int tmp = 12;
+    return x;
+}
+
+int g(){
+    static int x = 1;
+    return x;
+}
+```
+终端中：
+```
+gcc -E tmp.c  -o tmp.i
+gcc -S tmp.i -o tmp.s
+gcc -c tmp.s -o tmp.o
+touch temp.txt
+objdump -x -s -d tmp.o > temp.txt
+```
+
+打开 temp.txt 能看到：
+```
+Idx Name          Size      VMA               LMA               File off  Algn
+  0 .text         0000001f  0000000000000000  0000000000000000  00000040  2**0
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .data         00000008  0000000000000000  0000000000000000  00000060  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000004  0000000000000000  0000000000000000  00000068  2**2
+                  ALLOC
+  3 .comment      0000002a  0000000000000000  0000000000000000  00000068  2**0
+                  CONTENTS, READONLY
+  4 .note.GNU-stack 00000000  0000000000000000  0000000000000000  00000092  2**0
+                  CONTENTS, READONLY
+  5 .eh_frame     00000058  0000000000000000  0000000000000000  00000098  2**3
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+
+...
+
+Contents of section .data:
+ 0000 0c000000 01000000                    ........     
+
+...
+
+0000000000000000 l     O .bss	0000000000000004 x.1795
+0000000000000004 l     O .data	0000000000000004 x.1799
+```
+能看到为 0 的 x 被存入了 bss section 中，不为 0 的 x 在 data 中，且都具有唯一的名称。
+
+CSAPP 中 所描述的 ELF 符号表的条目格式如下：
+```
+typedef struct { 
+    int name;        /* string table offset */ 
+    int value;       /* section offset, or VM address */ 
+    int size;        /* object size in bytes */ 
+    char type:4,     /* data, func, section, or src file name (4 bits) */ 
+	 binding:4;  /* local or global (4 bits) */ 
+    char reserved;   /* unused */  
+    char section;    /* section header index, ABS, UNDEF, */ 
+                     /* or COMMON  */  
+} Elf_Symbol; 
+```
+这里用 readelf 命令查看到的条目格式不完整：
+```
+# terminal commmand:
+readelf -s --syms a.out > temp.txt
+
+# temp.txt
+
+Symbol table '.dynsym' contains 6 entries:
+   Num:    Value          Size Type    Bind   Vis      Ndx Name
+     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_deregisterTMCloneTab
+     2: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@GLIBC_2.2.5 (2)
+     3: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND __gmon_start__
+     4: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_registerTMCloneTable
+     5: 0000000000000000     0 FUNC    WEAK   DEFAULT  UND __cxa_finalize@GLIBC_2.2.5 (2)
+
+Symbol table '.symtab' contains 64 entries:
+   Num:    Value          Size Type    Bind   Vis      Ndx Name
+    //... 不过多列举，请自行尝试 
+    57: 00000000000004f0    43 FUNC    GLOBAL DEFAULT   13 _start
+    58: 000000000020101c     0 NOTYPE  GLOBAL DEFAULT   23 __bss_start
+    59: 00000000000005fa    33 FUNC    GLOBAL DEFAULT   13 main
+    60: 0000000000201020     0 OBJECT  GLOBAL HIDDEN    22 __TMC_END__
+    61: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_registerTMCloneTable
+    62: 0000000000000000     0 FUNC    WEAK   DEFAULT  UND __cxa_finalize@@GLIBC_2.2
+    63: 00000000000004b8     0 FUNC    GLOBAL DEFAULT   10 _init
+```
+可用 objdump 补充信息：
+```
+# terminal command
+objdump -x -s -d a.out > temp.txt 
+# 输出太多这里不列举了，自行尝试
+...
+0000000000000000 l    df *ABS*	0000000000000000              main.c
+0000000000000000 l    df *ABS*	0000000000000000              sum.c
+0000000000201010 g     O .data	000000000000000c              array
+...
+```
+ABS 表示不可被重定向的符号，UND 表示为定义的符号，这里用下列命令查看例子：
+```
+# terminal command:
+root@intor_aliyun_server:~/TestSpace/Cpp_Symbol# gcc -E main.c -o main.i
+root@intor_aliyun_server:~/TestSpace/Cpp_Symbol# gcc -S main.i -o main.s
+root@intor_aliyun_server:~/TestSpace/Cpp_Symbol# gcc -c main.s -o main.o
+root@intor_aliyun_server:~/TestSpace/Cpp_Symbol# objdump -x -s -d main.o > temp.txt 
+
+
+# temp.txt content（partial）:
+SYMBOL TABLE:
+0000000000000000 l    df *ABS*	0000000000000000 main.c
+0000000000000000 l    d  .text	0000000000000000 .text
+0000000000000000 l    d  .data	0000000000000000 .data
+0000000000000000 l    d  .bss	0000000000000000 .bss
+0000000000000000 l    d  .note.GNU-stack	0000000000000000 .note.GNU-stack
+0000000000000000 l    d  .eh_frame	0000000000000000 .eh_frame
+0000000000000000 l    d  .comment	0000000000000000 .comment
+0000000000000000 g     O .data	000000000000000c array
+0000000000000000 g     F .text	0000000000000021 main
+0000000000000000         *UND*	0000000000000000 _GLOBAL_OFFSET_TABLE_
+0000000000000000         *UND*	0000000000000000 sum
+```
+可看到未链接之前的 sum 函数仍然属于未定义符号
+
+关于 ```*COM*``` 的例子需要通过下述例子来体现：
+```c
+// tmp.c
+int a0;                 // in *COM*
+int a1 = 0;             // in bss
+int a2 = 2;             // in data
+static int a3;          // in bss
+static int a4 = 0;      // in bss
+
+
+int f(){
+    static int x = 0;
+    int tmp = 12;
+    return x;
+}
+
+int g(){
+    static int x = 1;
+    return x;
+}
+
+// terminal command:
+gcc -E tmp.c  -o tmp.i
+gcc -S tmp.i -o tmp.s
+gcc -c tmp.s -o tmp.o
+objdump -x -s -d tmp.o > temp.txt
+
+// temp.txt content (partial)
+/*
+SYMBOL TABLE:
+0000000000000000 l    df *ABS*	0000000000000000 tmp.c
+0000000000000000 l    d  .text	0000000000000000 .text
+0000000000000000 l    d  .data	0000000000000000 .data
+0000000000000000 l    d  .bss	0000000000000000 .bss
+0000000000000004 l     O .bss	0000000000000004 a3
+0000000000000008 l     O .bss	0000000000000004 a4
+000000000000000c l     O .bss	0000000000000004 x.1799
+0000000000000004 l     O .data	0000000000000004 x.1803
+0000000000000000 l    d  .note.GNU-stack	0000000000000000 .note.GNU-stack
+0000000000000000 l    d  .eh_frame	0000000000000000 .eh_frame
+0000000000000000 l    d  .comment	0000000000000000 .comment
+0000000000000004       O *COM*	0000000000000004 a0
+0000000000000000 g     O .bss	0000000000000004 a1
+0000000000000000 g     O .data	0000000000000004 a2
+0000000000000000 g     F .text	0000000000000013 f
+0000000000000013 g     F .text	000000000000000c g
+*/
+```
+这里印证了 CSAPP 中的说法：
+1. 未初始化的全局变量用 COM 符号标记
+2. 初始化后的全局变量在 data 段（非 0）
+3. 初始化为 0 的全局变量和静态变量，以及未初始化的静态变量均放在 bss 段
+
+
+
+### 2. 构建静态链接库
+    准备四个文件：
+```c
+// addvec.c
+int addcnt = 0;
+
+void addvec(int *x, int *y, int *z, int n) {
+    int i;
+
+    addcnt++;
+
+    for(int i = 0; i < n; i++) {
+        z[i] = x[i] + y[i];
+    }
+}
+
+// multvec.c
+int multcnt = 0;
+
+void multvec(int *x, int *y, int *z, int n) {
+    int i;
+
+    multcnt++;
+
+    for(int i = 0; i < n; i++) {
+        z[i] = x[i] + y[i];
+    }
+}
+
+// vector.h
+void addvec(int *x, int *y, int *z, int n);
+void multvec(int *x, int *y, int *z, int n);
+
+// main.c
+#include <stdio.h>
+#include "vector.h"
+
+int x[2] = {1, 2};
+int y[2] = {2, 3};
+int z[2];
+
+int main() {
+    addvec(x, y, z, 2);
+    printf("z = [%d %d]\n", z[0], z[1]);
+    multvec(x, y, z, 2);
+    printf("z = [%d %d]\n", z[0], z[1]);
+    return 0;
+}
+```
+然后终端输入命令
+```
+gcc -c addvec.c multvec.c
+ar rcs libvector.a addvec.o multvec.o 
+gcc -c main.c
+gcc -static -o a.out main.o ./libvector.a
+# 最后一行命令也可以写作： gcc -static -o a.out main.o -L. -lvector
+```
+
+静态库解析符号引用的方式
+linker 在生成可执行重定向文件之前，会维护三个初始为空的集合：
+E：代表输入的可重定向目标文件集合
+U：代表输入的可重定向目标文件或静态链接库中未定义的符号（或引用符号）集合
+D：代表输入的可重定向目标文件或静态链接库中的符号集合，这些符号定义了之前输入文件中未定义的符号引用
+
+生成可执行重定向文件的方式如下：
+有命令行：gcc -static a.o b.o ./d.a ./e.a ...
+1. 判断输入文件是 archive 文件还是目标文件
+2. 当读入的文件为可重定向目标文件，首先将该目标文件加入 E 集合中，如果该文件定义了 U 集合中未定义的符号引用，则修改 U 集合和 D 集合反应符号的引用关系（书中没有明确说明，但书中最后说若 U 不为空则报错，那么大致可以理解为是将 U 中已找到符号定义的符号引用去除，在 D 中添加该符号定义），并将该文件中的未定义符号引用加入 U 集合
+3. 当读入文件是 archive 文件则查找文件中是否有目标文件定义了 U 中的符号引用，如果有则将对应目标文件加入 E 集合中；如果没有则不加入。并且将未定义符号引用加入到 U 集合中。
+
+上述过程表明，命令行的文件顺序非常重要，若 a.o 中有依赖于 b.a archive 文件的符号引用，则 gcc -static -o a.out ./b.a a.o 会报错。
+
+### 3. 重定向
+重定向可通过如下实例查看：
+```c
+// main.c
+int sum(int *a, int n);
+
+int array[3] = {1, 2};
+
+int main(){
+    int val = sum(array, 2);
+    return val;
+}
+
+// sum.c
+int sum(int *a, int n){
+    int i, s = 0;
+
+    for(int i = 0; i < n; i++){
+        s += a[i];
+    }
+    return s;
+}
+```
+
+终端执行 
+```
+gcc -c main.c
+readelf -a main.o > maino.txt
+```
+maino.txt 中可找到如下内容：
+```
+Relocation section '.rela.text' at offset 0x228 contains 2 entries:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+000000000010  000800000002 R_X86_64_PC32     0000000000000000 array - 4
+000000000015  000b00000004 R_X86_64_PLT32    0000000000000000 sum - 4 
+```
+这里的一个条目对应的数据类型符合 CSAPP 中所描述的数据结构：
+```
+typedef struct { 
+    int offset;     /* offset of the reference to relocate */ 
+    int symbol:24,  /* symbol the reference should point to */ 
+	type:8;     /* relocation type */ 
+} Elf32_Rel; 
+```
+这里的 symbol 应该对应的就是 Sym. Name 项。这里 CSAPP 描述了两个 type（告知 linker 如何修改新的引用）的类型，但这个例子中只有一个对应的类型，他们分别是：
+R_X86_64_32：重定向一个 32 位绝对地址的引用
+R_X86_64_PC32：相对当前 PC 地址的一个 32 位地址偏移值，PC 当前地址加上这个 32 位偏移值
+
+之后的重定向计算可以使用 ```objdump -dx main.o > maino.txt``` 命令执行后得到的结果进行比对计算，但是这里的结果与书中的不一致。
+关于重定向的计算过程，详见 CSAPP 的 7.7.2 章，这里不赘述。
+
+### 4. lib interposition
+```c
+// int.c
+/* $begin interposemain */
+#include <stdio.h>
+#include <malloc.h>
+
+int main()
+{
+    int *p = malloc(32);
+    free(p);
+    return(0); 
+}
+/* $end interposemain */
+
+
+// mymallloc.c
+#ifdef RUNTIME
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <dlfcn.h>
+
+/* malloc wrapper function */
+void *malloc(size_t size)
+{
+    static __thread int print_times = 0;
+    print_times++;
+    void *(*mallocp)(size_t size);
+    char *error;
+
+    mallocp = dlsym(RTLD_NEXT, "malloc"); /* Get address of libc malloc */
+    if ((error = dlerror()) != NULL) {
+        printf("ERROR::DLSYM_EROOR_malloc::\n");
+        fputs(error, stderr);
+        exit(1);
+    }
+    char *ptr = mallocp(size); /* Call libc malloc */
+    if (print_times == 1)
+        printf("malloc(%d) = %p\n", (int)size, ptr);
+    print_times = 0;
+    return ptr;
+}
+
+/* free wrapper function */
+void free(void *ptr)
+{
+    static __thread int free_times = 0;
+    free_times++;
+    void (*freep)(void *) = NULL;
+    char *error;
+
+    if (!ptr)
+        return;
+
+    freep = dlsym(RTLD_NEXT, "free"); /* Get address of libc free */
+    if ((error = dlerror()) != NULL) {
+        printf("ERROR::DLSYM_EROOR_free::\n");
+        fputs(error, stderr);
+        exit(1);
+    }
+    freep(ptr); /* Call libc free */
+    printf("free(%p)\n", ptr);
+}
+
+/*
+
+gcc -DRUNTIME -shared -fpic -o mymalloc.so mymalloc.c -ldl
+gcc -o intr int.c
+LD_PRELOAD="./mymalloc.so" ./intr
+
+*/
+
+#endif
+
+
+```
