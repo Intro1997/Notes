@@ -1,3 +1,3 @@
 - [逐帧生成波形数据](./CreateWaveInFrame/README.md)
-- [Chromium 内通道数降采样实现](./Mixing/mixing.md)
-- [超前掩蔽——音频连续的理论依据](./Temporal_Masking/temporal_masking.md)
+- [Chromium 内通道数降采样实现](./Mixing/mixing.mdx)
+- [超前掩蔽——音频连续的理论依据](./Temporal_Masking/temporal_masking.mdx)

@@ -1,1 +1,1 @@
-- [基本能力](next_js_basic.md)
+- [基本能力](next_js_basic.mdx)
