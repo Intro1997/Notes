@@ -8,13 +8,13 @@
 
 #### 程序员的自我修养
 
-- [note](./Cpp/Basic/程序员的自我修养/note.md)
+- [self_improvement](./Cpp/Basic/程序员的自我修养/self_improvement.md)
 
 ### Engineer
 
 #### Cmake
 
-- [note](./Cpp/Engineer/CMake/note.md)
+- [avoid_using_link_dircetories](./Cpp/Engineer/CMake/avoid_using_link_dircetories.md)
 - [auto_config_sub_project](./Cpp/Engineer/CMake/auto_config_sub_project.md)
 
 ### Platform

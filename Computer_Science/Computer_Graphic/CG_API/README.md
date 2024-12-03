@@ -12,7 +12,7 @@
 
 #### Math
 
-- [note](./OpenGL/Math/note.md)
+- [opengl_math](./OpenGL/Math/opengl_math.md)
 
 #### Texture
 

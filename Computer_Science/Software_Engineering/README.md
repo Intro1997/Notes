@@ -8,7 +8,7 @@
 
 ### Code_Complete
 
-- [note](./work_method/Code_Complete/note.md)
+- [code_complete_note](./work_method/Code_Complete/code_complete_note.md)
 
 ### IEEE
 
