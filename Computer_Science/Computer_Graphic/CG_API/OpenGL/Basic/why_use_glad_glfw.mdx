@@ -1,3 +1,11 @@
+---
+title: glad 和 glfw
+date: '2024-11-30'
+tags: ['render', 'glad', 'glfw', 'graphics']
+draft: false
+summary: '探究 glad 和 glfw 的作用.'
+---
+
 # 背景
 
 在搜 glad，glfw 的作用时，经常会有人概括说：
@@ -5,8 +13,7 @@
 1. GLFW 是一个专门针对 OpenGL 的 C 语言库,它提供了一些渲染物体所需的最低限度的接口。它允许用户 创建 OpenGL 上下文，定义窗口参数以及处理用户输入。
 2. GLAD：由于 OpenGL 驱动版本众多，它大多数函数的位置都无法在编译时确定下来，需要在运行时查询...
 
-<font color="grey">引用自 [glfw 和 glad 有什么区别呢，glad 是用来干什么的（只知道是一个库）？ - coskgid 的回答 - 知乎](https://www.zhihu.com/question/344133077/answer/1161889755)
-</font>
+<font color="grey">引用自 [glfw 和 glad 有什么区别呢，glad 是用来干什么的（只知道是一个库）？ - coskgid 的回答 - 知乎](https://www.zhihu.com/question/344133077/answer/1161889755)</font>
 
 那么这些总结性的概括，省略了什么东西呢？这里我们以主要 macOS 为例，看一下这两个库做了什么，以及为什么要这样做
 
@@ -14,10 +21,10 @@
 
 以 macOS 为例，在 mac 上，我们通过 cocoa 间接调用到 opengl
 
-<div style="text-align: center">
-  <img src="images/cocoa_opengl.jpeg" width=600/>
+<p align="center">
+  <img src="images/cocoa_opengl.jpeg" width="600"/>
   <p>上图来源 <a href="https://developer.apple.com/library/archive/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_pg_concepts/opengl_pg_concepts.html">OpenGL on the Mac Platform</a></p>
-</div>
+</p>
 
 [OpenGL on the Mac Platform](https://developer.apple.com/library/archive/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/opengl_pg_concepts/opengl_pg_concepts.html) 文中的 OpenGL APIs Specific to OS X 节提到：
 

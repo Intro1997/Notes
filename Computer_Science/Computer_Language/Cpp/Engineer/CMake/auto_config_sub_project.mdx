@@ -1,3 +1,11 @@
+---
+title: CMake 自动配置子项目
+date: '2024-11-30'
+tags: ['cmake', 'engineer']
+draft: false
+summary: '使用 FetchContent 工具在构建项目时，自动下载配置子项目，并显示进度'
+---
+
 # 背景
 
 ICViewer 项目使用了 glfw，glm，assimp 库，最好的办法是能够在编译中一直使用这些库的最新版本，因此最好的方式是能够在 build 的时候 clone 最新的版本，在本地对依赖库进行更新，以适应不同操作系统。这样无论是维护还是上手，都非常方便。

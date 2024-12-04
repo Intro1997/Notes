@@ -1,4 +1,12 @@
-# glfw 禁用鼠标问题
+---
+title: glfw 隐藏鼠标问题
+date: '2024-11-30'
+tags: ['glfw', 'bug']
+draft: false
+summary: 'glfw 隐藏鼠标时，出现大幅度位移的问题，尚未解决.'
+---
+
+# glfw 隐藏鼠标问题
 
 ## 背景
 
@@ -15,7 +23,7 @@
 但我测试时发现，如果在移动过程中按下 cmd/alt，切换鼠标状态到 GLFW_CURSOR_DISABLED，摄像机有 1 帧画面的视角进行了大幅度的位移，但随后又移动回到当前位置：
 
 <video id="video" controls="" preload="none" poster="封面">
-  <source id="mp4" src="./bug0.mp4" type="video/mp4">
+  <source id="mp4" src="./bug0.mp4" type="video/mp4"/>
 </video>
 
 搜了一圈发现，似乎注释掉源代码中 \_glfwPlatformSetCursorMode 内部的 centerCursor 函数<a href="#r1"><sup>[1]</sup></a>就正常了。我找了一下 macOS 下的逻辑：

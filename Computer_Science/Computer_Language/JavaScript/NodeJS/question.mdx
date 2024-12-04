@@ -26,9 +26,9 @@
    之所以需要 `BlockingDrain()`，是因为之后的执行流程中，需要修改 `pending_worker_tasks_`，所以需要将之前的任务都执行一遍。
    DrainTasks() 负责添加任务到执行执行队列（不是数据结构中的 queue）中去，所以需要在每次调用 `uv_run` 之后，调用一次
    详细过程可以参考下图：
-    <div style="text-align: center">
-      <img src="imgs/DrainTask.svg" width=600/>
-   </div>
+    <p align="center">
+      <img src="imgs/DrainTask.svg" width="600"/>
+   </p>
 
 8. node 情形下，什么时候需要使用 isolate::scope?
  isolate::scope 确保了多线程，多 isolate 的情形下，对 v8 的使用是安全的；所以对于 nodejs 来说，在使用到 node env 的地方，必须是要 locker 和 isolate::scope 确保线程和多上下文安全

@@ -1,3 +1,12 @@
+---
+title: camera transform
+date: '2024-11-30'
+tags: ['matrix', 'camera transform', 'render']
+draft: false
+summary: '渲染过程中，实现相机所需要的矩阵变换推导'
+---
+# 相机实现
+
 ## 旋转矩阵推导理解
 
 在二维笛卡尔坐标系，基向量为 $\vec{v}_x=(1,0)$，$\vec{v}_y=(0,1)$ 的情况下，向量 $\vec{v} = (1,2)$ 的组成如下：
@@ -30,13 +39,13 @@ $$
 下面这个例子将 $\vec{v}_0=(1,\sqrt{3})$ 顺时针旋转 $30\degree$ 到 $\vec{v}_1=(\sqrt{3},1)$：
 
 <p align="center">
-<img src="./imgs/rotate_matrix0.png" width=242 height=210 />
+<img src="./imgs/rotate_matrix0.png" width="242" height="210" />
 </p>
 
 由于本质上旋转的是基向量，如下所示，基向量顺时针旋转 $30\degree$ 之后为
 
 <p align="center">
-<img src="./imgs/rotate_matrix1.png" width=216 height=191 />
+<img src="./imgs/rotate_matrix1.png" width="216" height="191" />
 </p>
 
 $$
@@ -129,7 +138,7 @@ $\vec{v_O} = (x_O,y_O)$ 表示旋转变换后的向量在原坐标系下的表�
 
 ## 正交(orthographic)投影矩阵推导理解
 
-正交投影本质上是将给定的 {left, right}, {top, bottom}, {near, far} 这三组 xyz 范围内的坐标，映射到某个三维坐标内（例如映射到 OpenGL 的 [-1, 1] 内）。
+正交投影本质上是将给定的 \{left, right\}, \{top, bottom\}, \{near, far\} 这三组 xyz 范围内的坐标，映射到某个三维坐标内（例如映射到 OpenGL 的 [-1, 1] 内）。
 这里只演示 1 维度情形下的变换公式。
 有以下条件：
 
@@ -183,8 +192,8 @@ $$
 投影矩阵的核心是比例，以 y 轴计算为例（x 轴相同）：
 
 <p align="middle">
-<img src="imgs/perspective0.png" width=348 height=390/>
-<p>
+<img src="imgs/perspective0.png" width="348" height="390"/>
+</p>
 
 其中 $\theta$ 是 fovy 角，$\alpha = \frac{\theta}{2}$，如上图所示，投影最终需要计算的是 P' 的 y 坐标。可以看到最后投影出的屏幕 y 坐标范围是 [-1.0, 1.0]，超出这个范围的点会被 OpenGL 进行裁剪。我们需要计算的就是 P' 的 y 坐标。因为相似三角形很容易得出:
 
@@ -334,15 +343,14 @@ LookAt 矩阵的推导分为三步：
 3. 由 1，2 步得到的 z，x 向量叉乘得到 y 轴（因为叉乘的四边形面积的几何意义 $|a||b||sin\theta|$，这一步无需进行 normalize）
 4. 将 z 轴反向，这是因为当原坐标系下的前后关系，会在 $\vec{PO}$ 方向上相反，如下图所示：
 
-<div style="text-align: center">
-<img src="./imgs/z_axis_opposite.png" width=600 />
-</div>
+<p align="center">
+<img src="./imgs/z_axis_opposite.png" width="600" />
+</p>
 
 当 B 是圆面片，A 是长方形面片时，左侧为相机应当看到的画面，右侧为相机坐标系下看到的画面
-
-<div style="text-align: center">
-<img src="./imgs/z_axis_view.png" width=600 />
-</div>
+<p align="center">
+<img src="./imgs/z_axis_view.png" width="600" />
+</p>
 
 
 5. 将原坐标系下的顶点坐标在相机坐标系下进行表示

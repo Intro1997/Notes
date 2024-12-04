@@ -2,8 +2,10 @@
 
 ## 笔记字体颜色对应的含义
 
-<font color="red">红色：不了解的问题</font><br>
-<font color="orange">橙色：个人观点与书中观点不一致的问题</font><br>
+<font color="red">红色：不了解的问题</font>
+
+<font color="orange">橙色：个人观点与书中观点不一致的问题</font>
+
 <font style="background-color: steelblue">钢蓝色：需要注意的重点</font>
 
 ## 第一章 什么是软件构建
@@ -26,12 +28,12 @@
 ## 第三章 三思而后行: 前期准备
 
 1. 不同项目使用的开发方法可以参考下面表：
-<div style="text-align: center">
-  <img src="images/software_type_with_dev_method_0.png" width=600/>
-</div>
-<div style="text-align: center">
-  <img src="images/software_type_with_dev_method_1.png" width=600/>
-</div>
+<p align="center">
+  <img src="images/software_type_with_dev_method_0.png" width="600"/>
+</p>
+<p align="center">
+  <img src="images/software_type_with_dev_method_1.png" width="600"/>
+</p>
 
 2. 对照项目的需求核对表
 
@@ -65,9 +67,9 @@
 1. 对类进行设计的目标应当在于，能够尽力写出可以忽视更多代码的结构
 2. 用编程完全描述语义（例如 video.play() 必须在 video.load() 之后执行，那么需要使用 Assert 等手段，处理直接调用 video.load() 的情形）
 3. 关于 assimp 中无法提取 interpolation 数据的处理办法建议 [(issue 地址)](https://github.com/assimp/assimp/issues/4890)
-<div style="text-align: center">
-  <img src="images/encapsulation_advice.png" width=600/>
-</div>
+<p align="center">
+  <img src="images/encapsulation_advice.png" width="600"/>
+</p>
 
 4. 尽力让你的 include file 成为调用方的文档。好的封装（协议&头文件&设计）应当避免调用方在开发过程中，尝试阅读你的源代码。
 5. 使你的成员变量尽可能保持在 7 $\pm$ 2 的程度（是否 $\pm$ 2，取决于成员变量是否为简单类型）

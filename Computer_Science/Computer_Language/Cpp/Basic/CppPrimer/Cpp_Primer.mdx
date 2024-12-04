@@ -1,10 +1,18 @@
+---
+title: C++ Primer
+date: '2020-11-30'
+tags: ['cpp', 'learn', 'c++ primer']
+draft: false
+summary: '阅读 C++ Primer 的笔记.'
+---
+
 # C++ Primer
 
 ## Chapter 1
 
 - cout, cerr 和 clog 这三者的不同是什么？
   答：cout 和 clog 有 buffer，cerr 没有 buffer
-- 多线程 cout，cerr 和 clog 输出是同步的吗？在 std::cout << "hello" << "world\n"; 会出现断开的情况吗？
+- 多线程 cout，cerr 和 clog 输出是同步的吗？在 `std::cout << "hello" << "world\n";` 会出现断开的情况吗？
   答：c++11 引入了 sync_with_stdio，默认开启以保证同步，下面是多线程的例子：
 
 ```c++
@@ -226,7 +234,7 @@ for loop 第一次 loop 会将 inString 中的所有内容输出到 word 中：
 - std::isspace(c, is.getloc()) is true for the next character c in is (this whitespace character remains in the input stream). <sup><a href="#r2">[2]</a></sup>
 
 stringstream 的状态被置为 eof，所以此时如果调用 stringstream.good() 会返回 false。
-而调用 seekg 时，seekg 内部会构造 std::basic_istream<CharT,Traits>::sentry，构造内部会调用 stringstream 的 good() 判断 goodbit，若 good() 为 false，则调用 is.setstate(std::ios_base::failbit) <sup><a href="#r3">[3]</a></sup>。
+而调用 seekg 时，seekg 内部会构造 `std::basic_istream<CharT,Traits>::sentry`，构造内部会调用 stringstream 的 good() 判断 goodbit，若 good() 为 false，则调用 is.setstate(std::ios_base::failbit) <sup><a href="#r3">[3]</a></sup>。
 good() 内部的实现非常简单，判断 state 是否完全等于 0:
 
 ```cpp
@@ -870,16 +878,15 @@ int main() {
 ## Reference
 
 1. <a id="r1" href="https://learn.microsoft.com/zh-cn/cpp/c-language/l-value-and-r-value-expressions?view=msvc-170&viewFallbackFrom=msvc-170s">Microsoft Learn 左值和右值表达式</a>
-2. <a id="r2" href="https://en.cppreference.com/w/cpp/string/basic_string/operator_ltltgtgt">cppreference operator<<,>>(std::basic_string)</a>
-3. <a id="r3" href="https://en.cppreference.com/w/cpp/io/basic_istream/sentry">cppreference std::basic_ostream<CharT,Traits>::sentry</a>
-4. <a id="r4" href="https://opensource.apple.com/source/cctools/cctools-921/include/mach-o/loader.h.auto.html"><mach-o/loader.h></a>
+2. <a id="r2" href="https://en.cppreference.com/w/cpp/string/basic_string/operator_ltltgtgt">cppreference operator\<\<\,\>\>(std::basic_string)</a>
+3. <a id="r3" href="https://en.cppreference.com/w/cpp/io/basic_istream/sentry">cppreference std::basic_ostream\<CharT,Traits\>::sentry</a>
+4. <a id="r4" href="https://opensource.apple.com/source/cctools/cctools-921/include/mach-o/loader.h.auto.html">\<mach-o\/loader.h\></a>
 5. <a id="r5" href="https://www.reddit.com/r/cpp_questions/comments/1117cpr/does_cmake_suffice_to_make_incremental_builds/">Reddit-Does cmake suffice to make incremental builds ?</a>
 6. <a id="r6" href="https://stackoverflow.com/questions/37327526/how-to-speed-up-compile-time-of-my-cmake-enabled-c-project">StackOverflow-How to speed up Compile Time of my CMake enabled C++ Project?</a>
 7. <a id="r7" href="https://bot-man-jl.github.io/articles/?post=2022/Cpp-Project-Compile-Optimization">C++ 项目编译优化</a>
 8. <a id="r8" href="https://stackoverflow.com/a/11018418/14419237">StackOverflow-What are inline namespaces for? [answer: 11018418]</a>
 9. <a id="r9" href="https://stackoverflow.com/a/60901989/14419237">StackOverflow-What are inline namespaces for? [answer: 60901989]</a>
-10. <a id="r10" href="https://stackoverflow.com/questions/411103/function-with-same-name-but-different-signature-in-derived-class-not-found#:~:text=If%20the%20resulting%20set%20of%20declarations%20are%20not%20all%20from%20sub%2Dobjects%20of%20the%20same%20type%2C%20or%20the%20set%20has%20a%20nonstatic%20member%20and%20includes%20members%20from%20distinct%20sub%2Dobjects%2C%20there%20is%20an%20ambiguity%20and%20the%20program%20is%20ill%2Dformed.%20Otherwise%20that%20set%20is%20the%20result%20of%20the%20lookup.">
-    Function with same name but different signature in derived class not found [answer: 411112]</a>
+10. <a id="r10" href="https://stackoverflow.com/questions/411103/function-with-same-name-but-different-signature-in-derived-class-not-found#:~:text=If%20the%20resulting%20set%20of%20declarations%20are%20not%20all%20from%20sub%2Dobjects%20of%20the%20same%20type%2C%20or%20the%20set%20has%20a%20nonstatic%20member%20and%20includes%20members%20from%20distinct%20sub%2Dobjects%2C%20there%20is%20an%20ambiguity%20and%20the%20program%20is%20ill%2Dformed.%20Otherwise%20that%20set%20is%20the%20result%20of%20the%20lookup.">Function with same name but different signature in derived class not found [answer: 411112]</a>
 11. <a id="r11" href="https://godbolt.org/z/516bccEqj">Compiler Explorer 类函数指针例子</a>
 12. <a id="r12" href="https://en.cppreference.com/w/cpp/language/operators#:~:text=.*%20(member%20access%20through%20pointer%20to%20member)">Cppreference-operator overloading::Restrict</a>
 13. <a id="r13" href="https://stackoverflow.com/questions/2696864/are-free-operator-overloads-evil">Are free operator->* overloads evil?</a>

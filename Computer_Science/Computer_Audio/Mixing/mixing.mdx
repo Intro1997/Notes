@@ -1,3 +1,11 @@
+---
+title: Audio Mixing
+date: '2024-11-03'
+tags: ['chromium', 'web_audio']
+draft: false
+summary: '探究 Chromium 混合音频的实现'
+---
+
 ~~1. 多通道 mix 逻辑可以参考 chromium 的 [third_party/webrtc/modules/audio_mixer/audio_frame_manipulator.cc -- RemixFrame()](https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/modules/audio_mixer/audio_frame_manipulator.cc;drc=90cac1911508d3d682a67c97aa62483eb712f69a;bpv=1;bpt=1;l=58?gsn=RemixFrame&gs=KYTHE%3A%2F%2FKoQDCr8Ba3l0aGU6Ly9jaHJvbWl1bS5nb29nbGVzb3VyY2UuY29tL2NvZGVzZWFyY2gvY2hyb21pdW0vc3JjLy9tYWluP2xhbmc9YyUyQiUyQj9wYXRoPXRoaXJkX3BhcnR5L3dlYnJ0Yy9tb2R1bGVzL2F1ZGlvX21peGVyL2F1ZGlvX2ZyYW1lX21hbmlwdWxhdG9yLmNjI05pM2dKMkJJTlo2WlVydkE5VnQ5cE0tU2F0RGs0VG95RnJWM2htOUxMbFkKvwFreXRoZTovL2Nocm9taXVtLmdvb2dsZXNvdXJjZS5jb20vY29kZXNlYXJjaC9jaHJvbWl1bS9zcmMvL21haW4_bGFuZz1jJTJCJTJCP3BhdGg9dGhpcmRfcGFydHkvd2VicnRjL21vZHVsZXMvYXVkaW9fbWl4ZXIvYXVkaW9fZnJhbWVfbWFuaXB1bGF0b3IuY2MjdXR6dUZORlpBUnJSLTdLQmxFbWlYZ0JXYmlLTTdMYW9EamtRNVV3ZHR1dw%3D%3D)。这个逻辑被用于 WebRTC 的音频数据混合。因为 WebRTC 要保证实时性，所以使用的方法简单粗暴：~~
 
 ~~- 对于低于 3 通道的音频数据：~~

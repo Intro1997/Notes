@@ -1,4 +1,13 @@
-# 如何借助 OpenGL 保存图像数据到 GPU？
+---
+title: OpenGL Texture
+date: '2024-11-30'
+tags: ['opengl', 'texture' 'render']
+draft: false
+summary: 'OpenGL Texture 的疑问和解答'
+---
+# OpenGL Texture
+
+## 如何借助 OpenGL 保存图像数据到 GPU？
 
 OpenGL 的 Texture 对象，就是解决标题提出问题的答案。我们通过以下操作，将保存了图像的 data 数据，拷贝到 GPU 中去：
 
@@ -13,7 +22,7 @@ glTexImage2d(GL_TEXTUER_2D, img_format, img_width, img_height,
              0, img_format, GL_UNSIGNED_BYTE, data);
 ```
 
-# 如何在 shader 中使用？
+## 如何在 shader 中使用？
 
 如果我有一个 fragment shader：
 
@@ -35,7 +44,7 @@ glUseProgram(shader_program);
 glUniform1i(glGetUniformLocation(shader_program, "texture1"), 0);
 ```
 
-# texture1 为什么是 0？
+## texture1 为什么是 0？
 
 参阅 [glBindTexture 文档](https://registry.khronos.org/OpenGL-Refpages/gl4/html/glBindTexture.xhtml)了解到：
 
@@ -63,7 +72,7 @@ glUniform1i(glGetUniformLocation(shader_program, "texture1"), 0);
 
 > The initial value is GL_TEXTURE0.
 
-# 为什么不直接使用 texture id？
+## 为什么不直接使用 texture id？
 
 其实就连官方自己都说这种关联 texture 到 sampler 的方式[并不直观](<https://www.khronos.org/opengl/wiki/Sampler_(GLSL)#Binding_textures_to_samplers:~:text=textures%20is%20somewhat-,unintuitive,-.%20The%20mapping%20is>)，我在 KHRONOS 论坛上的一处提问中找到了方便理解这一流程的[答案](https://community.khronos.org/t/why-use-or-define-texture-units-and-what-is-the-mapping-with-uniforms-and-texture-units/106265/8)
 
@@ -73,7 +82,7 @@ glUniform1i(glGetUniformLocation(shader_program, "texture1"), 0);
 
 但。。。为什么不学 vulkan 呢？`:)`
 
-# texture image unit 的上限与 GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
+## texture image unit 的上限与 GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
 
 texture image unit 的上限很好获取，参考[这里](https://stackoverflow.com/questions/46426331/number-of-texture-units-gl-texturei-in-opengl-4-implementation-in-visual-studi)
 
